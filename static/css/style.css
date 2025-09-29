@@ -1,15 +1,133 @@
+/* --- Variáveis de Tema --- */
+:root {
+    --primary-color-light: #000000;
+    --primary-color-dark: #ffffff;
+    --accent-color: #FFA500;
+    --background-light: #ffffff;
+    --background-dark: #161616; 
+    --text-color-light: #1d1d1f;
+    --text-color-dark: #f5f5f7;
+    --card-bg-light: #ffffff;
+    --card-bg-dark: #2c2c2e;
+    --border-color-light: #d2d2d7;
+    --border-color-dark: #424245;
+    --secondary-text-light: #6e6e73;
+    --secondary-text-dark: #a1a1a6;
+}
+
+[data-bs-theme="light"] {
+    --bs-body-bg: var(--background-light);
+    --bs-body-color: var(--text-color-light);
+    --bs-card-bg: var(--card-bg-light);
+    --bs-border-color: var(--border-color-light);
+    --bs-primary: var(--primary-color-light);
+    --bs-secondary-color: var(--secondary-text-light);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--background-dark);
+    --bs-body-color: var(--text-color-dark);
+    --bs-card-bg: var(--card-bg-dark);
+    --bs-border-color: var(--border-color-dark);
+    --bs-primary: var(--primary-color-dark);
+    --bs-light-subtle-bg: #333;
+    --bs-secondary-color: var(--secondary-text-dark);
+}
+
 body {
-    background-color: #f8f9fa;
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease;
 }
 
-.container {
-    max-width: 800px;
+main.container {
+    max-width: 680px;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
-.card-header h5 {
-    font-weight: 500;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-#suggested-response {
-    white-space: pre-wrap;
+.hero-banner {
+    background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url('https://autou-digital.notion.site/images/page-cover/webb2.jpg');
+    background-size: cover;
+    background-position: center;
+    padding: 4rem 0;
+    text-align: center;
+    color: #fff;
+    position: relative;
 }
+
+.page-icon {
+    width: 78px;
+    height: 78px;
+    margin-bottom: 1.5rem;
+}
+
+.display-5 {
+    font-weight: 700;
+}
+
+.hero-banner .display-5 {
+    color: var(--accent-color);
+}
+
+.hero-banner .lead {
+    color: #e2e2e2;
+}
+
+.form-control {
+    background-color: var(--bs-body-bg);
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: var(--bs-primary);
+}
+
+.analyze-btn {
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    font-weight: 600;
+}
+
+[data-bs-theme="light"] .analyze-btn {
+    background-color: #000;
+    border-color: #000;
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .analyze-btn {
+    background-color: #fff;
+    border-color: #fff;
+    color: #000;
+}
+
+.theme-toggle-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    color: #fff;
+    font-size: 1.25rem;
+}
+
+[data-bs-theme="dark"] .badge.bg-produtivo {
+    background-color: var(--accent-color) !important;
+    color: #000 !important;
+}
+
+[data-bs-theme="light"] .badge.bg-produtivo {
+    background-color: var(--bs-primary) !important;
+    color: var(--bs-body-bg) !important;
+}
+
+#result-container {
+    transition: opacity 0.5s ease-in-out;
+}
+
+.card {
+    border-radius: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+}
+
