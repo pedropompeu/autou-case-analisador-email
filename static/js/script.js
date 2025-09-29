@@ -7,11 +7,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMessage = document.getElementById('error-message');
     const spinner = document.getElementById('spinner');
     const buttonText = document.getElementById('button-text');
+    const copyBtn = document.getElementById('copy-btn');
+    const copyBtnText = document.getElementById('copy-btn-text');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+    const htmlElement = document.documentElement;
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    htmlElement.setAttribute('data-bs-theme', savedTheme);
+    themeIcon.className = savedTheme === 'dark' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+    
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = htmlElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        htmlElement.setAttribute('data-bs-theme', newTheme);
+        themeIcon.className = newTheme === 'dark' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+        localStorage.setItem('theme', newTheme);
+    });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        // Resetar estados
         resultContainer.classList.add('d-none');
         errorContainer.classList.add('d-none');
         spinner.classList.remove('d-none');
@@ -35,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // O resultado da OpenAI pode vir como uma string JSON, então precisamos parsear de novo
             const data = typeof result === 'string' ? JSON.parse(result) : result;
             
-            // Exibir resultados
             categoryBadge.textContent = data.categoria;
             if (data.categoria === 'Produtivo') {
                 categoryBadge.className = 'badge bg-success';
@@ -47,14 +62,27 @@ document.addEventListener('DOMContentLoaded', () => {
             resultContainer.classList.remove('d-none');
 
         } catch (error) {
-            // Exibir erro
             errorMessage.textContent = error.message;
             errorContainer.classList.remove('d-none');
         } finally {
-            // Restaurar botão
             spinner.classList.add('d-none');
             buttonText.textContent = 'Analisar Email';
             form.querySelector('button').disabled = false;
         }
+    });
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(suggestedResponse.textContent).then(() => {
+            const originalIcon = copyBtn.querySelector('i').className;
+            copyBtn.querySelector('i').className = 'bi bi-check-lg';
+            copyBtnText.textContent = 'Copiado!';
+
+            setTimeout(() => {
+                copyBtn.querySelector('i').className = originalIcon;
+                copyBtnText.textContent = 'Copiar';
+            }, 2000);
+        }).catch(err => {
+            console.error('Erro ao copiar texto: ', err);
+            alert('Falha ao copiar o texto. Por favor, copie manualmente.');
+        });
     });
 });
