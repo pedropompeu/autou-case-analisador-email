@@ -31,7 +31,7 @@ def analyze_email_with_gemini(email_text):
     }
     
     model = genai.GenerativeModel(
-        model_name="gemini-pro", 
+        model_name="gemini-pro-latest", 
         generation_config=generation_config
     )
 
@@ -52,9 +52,8 @@ def analyze_email_with_gemini(email_text):
     Retorne apenas o objeto JSON.
     """
     
-    # --- LÓGICA DE RETENTATIVA ADICIONADA ---
     max_retries = 3
-    delay = 5  # segundos
+    delay = 5
     for attempt in range(max_retries):
         try:
             response = model.generate_content(prompt)
