@@ -1,0 +1,15 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 800px;
+}
+
+.card-header h5 {
+    font-weight: 500;
+}
+
+#suggested-response {
+    white-space: pre-wrap;
+}
