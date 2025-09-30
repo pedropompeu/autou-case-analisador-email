@@ -21,7 +21,7 @@ app = Flask(__name__)
 
 def analyze_email_with_gemini(email_text):
     """
-    Envia o texto do email para a API do Gemini com lógica de retentativa.
+    Envia o texto do email para a API do Gemini com lógica de retentativa e prompt aprimorado.
     """
     if not email_text or not email_text.strip():
         return {"error": "O texto do email está vazio."}
@@ -38,11 +38,14 @@ def analyze_email_with_gemini(email_text):
     prompt = f"""
     Analise o conteúdo do email a seguir e retorne uma análise estruturada em formato JSON.
 
-    O JSON de saída deve ter duas chaves:
+    O JSON de saída deve ter três chaves:
     1. "categoria": Classifique o email como "Produtivo" ou "Improdutivo".
        - "Produtivo": Emails que exigem uma ação (solicitações, dúvidas, etc.).
        - "Improdutivo": Emails que não necessitam de ação (felicitações, spam, etc.).
-    2. "sugestao_resposta": Crie uma sugestão de resposta curta e profissional. Para emails improdutivos, a resposta pode ser "Nenhuma ação necessária.".
+    2. "resumo": Crie um resumo conciso de uma frase sobre o que se trata o email.
+    3. "sugestao_resposta": 
+       - Se a categoria for "Produtivo", elabore uma resposta curta e profissional que possa ser usada como ponto de partida.
+       - Se a categoria for "Improdutivo", o valor desta chave deve ser "Nenhuma ação necessária.".
 
     Email para analisar:
     ---
@@ -83,9 +86,10 @@ def index():
 @app.route('/processar-email', methods=['POST'])
 def processar_email():
     """
-    Processa o email recebido via texto ou upload de arquivo.
+    Processa o email recebido, combinando o texto do corpo e do anexo.
     """
-    email_text = ""
+    body_text = request.form.get('text', '').strip()
+    attachment_text = ""
     
     if 'file' in request.files and request.files['file'].filename != '':
         file = request.files['file']
@@ -93,23 +97,26 @@ def processar_email():
 
         try:
             if filename.endswith('.txt'):
-                email_text = file.read().decode('utf-8')
+                attachment_text = file.read().decode('utf-8')
             elif filename.endswith('.pdf'):
                 pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
                 for page in pdf_reader.pages:
-                    email_text += page.extract_text()
+                    attachment_text += page.extract_text()
             else:
                 return jsonify({"error": "Formato de arquivo não suportado. Use .txt ou .pdf."}), 400
         except Exception as e:
             return jsonify({"error": f"Erro ao processar o arquivo: {e}"}), 500
 
-    else:
-        email_text = request.form.get('text', '')
+    # Combinar o texto do corpo e do anexo
+    full_email_text = body_text
+    if attachment_text:
+        full_email_text += f"\n\n--- CONTEÚDO DO ANEXO ---\n{attachment_text}"
 
-    if not email_text.strip():
+    if not full_email_text.strip():
         return jsonify({"error": "Nenhum texto ou arquivo válido foi enviado."}), 400
 
-    analysis_result_str = analyze_email_with_gemini(email_text)
+    analysis_result_str = analyze_email_with_gemini(full_email_text)
+    # --- FIM DA CORREÇÃO ---
 
     try:
         json.loads(analysis_result_str)
@@ -121,4 +128,3 @@ def processar_email():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
