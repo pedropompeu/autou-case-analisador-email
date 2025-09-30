@@ -40,6 +40,12 @@
             <div class="mb-3">
                 <label for="email-file" class="form-label">Ou faça o upload de um ficheiro (.txt, .pdf):</label>
                 <input class="form-control" type="file" id="email-file" name="file" accept=".txt,.pdf">
+                <div id="file-preview-container" class="mt-2 d-none">
+                    <div class="d-flex justify-content-between align-items-center p-2 bg-light-subtle rounded border">
+                        <span class="text-truncate"><i class="bi bi-file-earmark-text me-2"></i><span id="file-name"></span></span>
+                        <button type="button" class="btn-close" id="remove-file-btn" aria-label="Remover ficheiro"></button>
+                    </div>                        
+                </div>
             </div>
             <div class="d-grid">
                 <button type="submit" class="btn analyze-btn btn-lg">

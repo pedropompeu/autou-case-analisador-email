@@ -19,6 +19,8 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 app = Flask(__name__)
 
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Limite de upload de arquivo de 2MB
+
 def analyze_email_with_gemini(email_text):
     """
     Envia o texto do email para a API do Gemini com lógica de retentativa e prompt aprimorado.

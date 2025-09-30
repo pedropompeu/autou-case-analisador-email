@@ -8,11 +8,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryText = document.getElementById('summary-text'); // Referência para o novo campo de resumo
     const suggestedResponse = document.getElementById('suggested-response');
     const copyBtn = document.getElementById('copy-btn');
+
+    const fileInput = document.getElementById('email-file');
+    const filePreviewContainer = document.getElementById('file-preview-container');
+    const fileNameDisplay = document.getElementById('file-name');
+    const removeFileBtn = document.getElementById('remove-file-btn');
     
     // Elementos de estado da UI
     const errorMessage = document.getElementById('error-message');
     const spinner = document.getElementById('spinner');
     const buttonText = document.getElementById('button-text');
+
+     fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        // Esconde a pré-visualização por defeito para recomeçar a verificação
+        filePreviewContainer.classList.add('d-none');
+
+        if (file) {
+            // Verifica o tamanho do ficheiro
+            if (file.size > 2 * 1024 * 1024) { // 2MB
+                errorMessage.textContent = 'O ficheiro selecionado excede o limite de 2MB.';
+                errorContainer.classList.remove('d-none');
+                fileInput.value = ''; // Limpa o input
+                return; // Para a execução
+            }
+
+            // Se for válido, mostra a pré-visualização
+            errorContainer.classList.add('d-none'); // Esconde erros anteriores
+            fileNameDisplay.textContent = file.name;
+            filePreviewContainer.classList.remove('d-none');
+        }
+    });
+
+    // Listener para o botão de remover o ficheiro
+    removeFileBtn.addEventListener('click', () => {
+        fileInput.value = ''; // Limpa o input do ficheiro, "desselecionando-o"
+        filePreviewContainer.classList.add('d-none'); // Esconde a pré-visualização
+    });
 
     // Lógica de submissão do formulário
     form.addEventListener('submit', async (event) => {
