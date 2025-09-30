@@ -31,7 +31,7 @@ def analyze_email_with_gemini(email_text):
     }
     
     model = genai.GenerativeModel(
-        model_name="gemini-pro-latest", 
+        model_name="gemini-flash-latest", 
         generation_config=generation_config
     )
 
@@ -40,7 +40,7 @@ def analyze_email_with_gemini(email_text):
 
     O JSON de saída deve ter três chaves:
     1. "categoria": Classifique o email como "Produtivo" ou "Improdutivo".
-       - "Produtivo": Emails que exigem uma ação (solicitações, dúvidas, etc.).
+       - "Produtivo": Emails que exigem uma ação (solicitações, dúvidas, relatórios, documentações, etc.).
        - "Improdutivo": Emails que não necessitam de ação (felicitações, spam, etc.).
     2. "resumo": Crie um resumo conciso de uma frase sobre o que se trata o email.
     3. "sugestao_resposta": 
@@ -56,16 +56,16 @@ def analyze_email_with_gemini(email_text):
     """
     
     max_retries = 3
-    delay = 5
+    delay = 15
     for attempt in range(max_retries):
         try:
             response = model.generate_content(prompt)
             return response.text
         except exceptions.ResourceExhausted as e:
             if attempt < max_retries - 1:
-                print(f"Rate limit atingido. Tentando novamente em {delay} segundos...")
+                print(f"Rate limite atingido. Tentando novamente em {delay} segundos...")
                 time.sleep(delay)
-                delay *= 2 
+                delay *= 2.5 
             else:
                 print("Máximo de retentativas atingido. Falha na chamada da API.")
                 return {"error": "A API está sobrecarregada, tente novamente mais tarde."}
@@ -115,16 +115,21 @@ def processar_email():
     if not full_email_text.strip():
         return jsonify({"error": "Nenhum texto ou arquivo válido foi enviado."}), 400
 
-    analysis_result_str = analyze_email_with_gemini(full_email_text)
-    # --- FIM DA CORREÇÃO ---
+    analysis_result = analyze_email_with_gemini(full_email_text)
 
+    # Verifica se a função de análise já retornou um dicionário de erro (ex: API sobrecarregada)
+    if isinstance(analysis_result, dict) and 'error' in analysis_result:
+        # Se for, retorna-o diretamente como um JSON de erro.
+        return jsonify(analysis_result), 503
+    
     try:
-        json.loads(analysis_result_str)
-        return analysis_result_str, 200, {'Content-Type': 'application/json'}
+        # Se não for um erro, prossegue como normal
+        json.loads(analysis_result)
+        return analysis_result, 200, {'Content-Type': 'application/json'}
     except (json.JSONDecodeError, TypeError):
-        if isinstance(analysis_result_str, dict) and 'error' in analysis_result_str:
-            return jsonify(analysis_result_str), 500
+        # Este bloco trata o caso de a IA retornar um JSON mal formatado
         return jsonify({"error": "A resposta da IA não foi um JSON válido."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
+
