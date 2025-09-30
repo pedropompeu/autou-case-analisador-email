@@ -12,9 +12,9 @@
 🚀 Demonstração Online
 A aplicação está disponível para teste no seguinte link:
 
-[URL_DA_SUA_APLICAÇÃO_AQUI]
+[analisador-email.onrender.com](https://analisador-email.onrender.com)
 
-(Nota: O deploy será realizado em breve).
+Vídeo de Apresentação: Assistir no [YouTube]
 
 📋 Sobre o Projeto
 Este projeto é uma solução para o desafio proposto pela AutoU, que visa otimizar a gestão de emails numa empresa do setor financeiro. A aplicação automatiza a triagem de emails, classificando-os em Produtivo ou Improdutivo e gerando uma sugestão de resposta apropriada para cada categoria, liberando tempo da equipe para tarefas de maior valor.
