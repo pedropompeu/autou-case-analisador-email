@@ -2,22 +2,27 @@
 <html lang="pt-BR" data-bs-theme="dark">
 
 <head>
+    <!-- --- METADADOS E LINKS ESSENCIAIS --- -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analisador de Emails - AutoU</title>
-    <!-- Bootstrap e Ícones -->
+
+    <!-- Bootstrap CSS e Ícones -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Fontes -->
+    
+    <!-- Fontes (Google Fonts) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- CSS Customizado -->
+
+    <!-- Folha de Estilos Personalizada -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
-    <!-- Banner -->
+
+    <!-- --- BANNER PRINCIPAL (HERO) --- -->
     <header class="hero-banner">
         <button id="theme-toggle" class="btn theme-toggle-btn">
             <i class="bi bi-sun-fill"></i>
@@ -29,17 +34,24 @@
         </div>
     </header>
 
-    <!-- Conteúdo Principal -->
+    <!-- --- CONTEÚDO PRINCIPAL DA PÁGINA --- -->
     <main class="container my-5">
+
+        <!-- --- Formulário de Análise --- -->
         <form id="email-form">
+            <!-- Input de Texto -->
             <div class="mb-3">
                 <label for="email-text" class="form-label">Cole o conteúdo do email abaixo:</label>
                 <textarea class="form-control" id="email-text" name="text" rows="8"
                     placeholder="Prezado(a), gostaria de solicitar uma atualização sobre..."></textarea>
             </div>
+
+            <!-- Input de Ficheiro -->
             <div class="mb-3">
                 <label for="email-file" class="form-label">Ou faça o upload de um ficheiro (.txt, .pdf):</label>
                 <input class="form-control" type="file" id="email-file" name="file" accept=".txt,.pdf">
+                
+                <!-- Pré-visualização do Ficheiro Selecionado -->
                 <div id="file-preview-container" class="mt-2 d-none">
                     <div class="d-flex justify-content-between align-items-center p-2 bg-light-subtle rounded border">
                         <span class="text-truncate"><i class="bi bi-file-earmark-text me-2"></i><span id="file-name"></span></span>
@@ -47,6 +59,8 @@
                     </div>                        
                 </div>
             </div>
+
+            <!-- Botão de Submissão -->
             <div class="d-grid">
                 <button type="submit" class="btn analyze-btn btn-lg">
                     <span id="button-text">Analisar Email</span>
@@ -57,7 +71,7 @@
             </div>
         </form>
 
-        <!-- Container de Resultado -->
+        <!-- --- Container de Resultado da Análise --- -->
         <div id="result-container" class="mt-4 d-none">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -66,11 +80,9 @@
                 <div class="card-body">
                     <p><strong><i class="bi bi-tag-fill me-2"></i>Categoria:</strong> <span id="category-badge" class="badge"></span></p>
 
-                    <!-- CAMPO DE RESUMO -->
                     <p class="mb-2"><strong><i class="bi bi-card-text me-2"></i>Resumo do Email:</strong></p>
                     <div id="summary-text" class="p-3 bg-light-subtle rounded border mb-3"></div>
 
-                    <!-- CAMPO DE RESPOSTA -->
                     <p class="mb-2 d-flex justify-content-between align-items-center">
                         <strong><i class="bi bi-reply-fill me-2"></i>Sugestão de Resposta:</strong>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="copy-btn">
@@ -82,7 +94,7 @@
             </div>
         </div>
 
-        <!-- Container de Erro -->
+        <!-- --- Container de Erro --- -->
         <div id="error-container" class="mt-4 d-none">
             <div class="alert alert-danger" role="alert">
                 <strong>Erro:</strong> <span id="error-message"></span>
@@ -90,6 +102,7 @@
         </div>
     </main>
 
+    <!-- --- SCRIPT DA APLICAÇÃO --- -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 

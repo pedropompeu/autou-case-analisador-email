@@ -1,29 +1,36 @@
 import os
 import time
+import io
+import json
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import google.generativeai as genai
 from google.api_core import exceptions
 import PyPDF2
-import io
-import json
 
-# Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
 
-# Configurar a chave da API do Gemini a partir do .env
+# Carrega e valida a chave da API do Gemini a partir das variáveis de ambiente
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    raise ValueError("Chave da API do Gemini não encontrada. Verifique seu arquivo .env")
+    raise ValueError("Chave da API do Gemini não encontrada. Verifique seu ficheiro .env")
 genai.configure(api_key=GEMINI_API_KEY)
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Define um limite de upload de 2MB
 
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Limite de upload de arquivo de 2MB
+# --- Lógica Principal da IA ---
 
-def analyze_email_with_gemini(email_text):
+def analyze_email_with_gemini(email_text: str) -> dict | str:
     """
-    Envia o texto do email para a API do Gemini com lógica de retentativa e prompt aprimorado.
+    Envia o texto do email para a API do Gemini, com lógica de retentativa.
+
+    Args:
+        email_text (str): O conteúdo completo do email a ser analisado.
+
+    Returns:
+        dict | str: O resultado da IA como uma string JSON em caso de sucesso,
+                    ou um dicionário de erro em caso de falha.
     """
     if not email_text or not email_text.strip():
         return {"error": "O texto do email está vazio."}
@@ -57,79 +64,75 @@ def analyze_email_with_gemini(email_text):
     Retorne apenas o objeto JSON.
     """
     
+    # Lógica de retentativa para lidar com os limites da API (Rate Limit)
     max_retries = 3
     delay = 15
     for attempt in range(max_retries):
         try:
             response = model.generate_content(prompt)
             return response.text
-        except exceptions.ResourceExhausted as e:
+        except exceptions.ResourceExhausted:
             if attempt < max_retries - 1:
-                print(f"Rate limite atingido. Tentando novamente em {delay} segundos...")
+                print(f"Rate limit atingido. Tentando novamente em {delay} segundos...")
                 time.sleep(delay)
                 delay *= 2.5 
             else:
                 print("Máximo de retentativas atingido. Falha na chamada da API.")
                 return {"error": "A API está sobrecarregada, tente novamente mais tarde."}
         except Exception as e:
-            print(f"Erro na API do Gemini: {e}")
-            error_message = str(e)
-            if "API key not valid" in error_message:
-                return {"error": "A chave da API do Gemini não é válida. Verifique a chave no arquivo .env."}
-            return {"error": f"Ocorreu um erro ao comunicar com a IA: {error_message}"}
+            print(f"Erro inesperado na API do Gemini: {e}")
+            return {"error": f"Ocorreu um erro ao comunicar com a IA."}
 
+# --- Rotas da Aplicação (Endpoints) ---
 
 @app.route('/')
-def index():
-    """Renderiza a página principal."""
+def index() -> str:
+    """Renderiza a página principal da aplicação (index.html)."""
     return render_template('index.html')
 
 
 @app.route('/processar-email', methods=['POST'])
 def processar_email():
     """
-    Processa o email recebido, combinando o texto do corpo e do anexo.
+    Recebe os dados do formulário, processa o texto e o ficheiro,
+    chama a função de análise da IA e retorna o resultado formatado.
     """
     body_text = request.form.get('text', '').strip()
     attachment_text = ""
     
+    # Processa o ficheiro de anexo, se existir
     if 'file' in request.files and request.files['file'].filename != '':
         file = request.files['file']
-        filename = file.filename.lower()
-
         try:
-            if filename.endswith('.txt'):
+            if file.filename.lower().endswith('.txt'):
                 attachment_text = file.read().decode('utf-8')
-            elif filename.endswith('.pdf'):
+            elif file.filename.lower().endswith('.pdf'):
                 pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
-                for page in pdf_reader.pages:
-                    attachment_text += page.extract_text()
+                attachment_text = "".join(page.extract_text() for page in pdf_reader.pages)
             else:
-                return jsonify({"error": "Formato de arquivo não suportado. Use .txt ou .pdf."}), 400
+                return jsonify({"error": "Formato de ficheiro não suportado. Use .txt ou .pdf."}), 400
         except Exception as e:
-            return jsonify({"error": f"Erro ao processar o arquivo: {e}"}), 500
+            print(f"Erro ao processar o ficheiro: {e}")
+            return jsonify({"error": "Ocorreu um erro ao processar o ficheiro."}), 500
 
-    # Combinar o texto do corpo e do anexo
+    # Combina o texto do corpo e do anexo para uma análise completa
     full_email_text = body_text
     if attachment_text:
         full_email_text += f"\n\n--- CONTEÚDO DO ANEXO ---\n{attachment_text}"
 
     if not full_email_text.strip():
-        return jsonify({"error": "Nenhum texto ou arquivo válido foi enviado."}), 400
+        return jsonify({"error": "Nenhum texto ou ficheiro válido foi enviado."}), 400
 
     analysis_result = analyze_email_with_gemini(full_email_text)
 
-    # Verifica se a função de análise já retornou um dicionário de erro (ex: API sobrecarregada)
+    # Trata a resposta para o frontend, diferenciando sucesso de erro
     if isinstance(analysis_result, dict) and 'error' in analysis_result:
-        # Se for, retorna-o diretamente como um JSON de erro.
-        return jsonify(analysis_result), 503
+        return jsonify(analysis_result), 503  # Retorna erro de serviço indisponível
     
     try:
-        # Se não for um erro, prossegue como normal
         json.loads(analysis_result)
         return analysis_result, 200, {'Content-Type': 'application/json'}
     except (json.JSONDecodeError, TypeError):
-        # Este bloco trata o caso de a IA retornar um JSON mal formatado
         return jsonify({"error": "A resposta da IA não foi um JSON válido."}), 500
 
 if __name__ == '__main__':
