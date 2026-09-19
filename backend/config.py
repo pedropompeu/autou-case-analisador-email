@@ -68,6 +68,13 @@ class Config:
             raise ValueError("GEMINI_API_KEY não definida. Adicione ao seu arquivo .env")
 
 
+def _normalize_db_url(url: str) -> str:
+    """Normaliza 'postgres://' (padrão antigo de PaaS como Render/Heroku) para 'postgresql://'."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql://", 1)
+    return url
+
+
 class DevelopmentConfig(Config):
     """Configuração para ambiente de desenvolvimento."""
 
@@ -75,9 +82,11 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     SQLALCHEMY_ECHO = True
-    SQLALCHEMY_DATABASE_URI: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:postgres@localhost:5432/email_analyzer",
+    SQLALCHEMY_DATABASE_URI: str = _normalize_db_url(
+        os.getenv(
+            "DATABASE_URL",
+            "postgresql://postgres:postgres@localhost:5432/email_analyzer",
+        )
     )
 
 
@@ -107,7 +116,7 @@ class ProductionConfig(Config):
     ENV = "production"
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI: str = os.getenv("DATABASE_URL", "")
+    SQLALCHEMY_DATABASE_URI: str = _normalize_db_url(os.getenv("DATABASE_URL", ""))
 
     # Security headers via Flask-Talisman
     TALISMAN_FORCE_HTTPS = True
