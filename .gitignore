@@ -90,3 +90,9 @@ ssl/
 *.pem
 *.key
 *.crt
+
+# Node.js / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+

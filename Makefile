@@ -1,26 +1,35 @@
-.PHONY: help install dev-install test lint format clean docker-build docker-up docker-down migrate
+.PHONY: help install dev-install test lint format clean docker-build docker-up docker-down migrate frontend-install frontend-dev
 
 help: ## Mostra esta mensagem de ajuda
 	@echo "Comandos disponíveis:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-install: ## Instala dependências de produção
+install: ## Instala dependências de produção (backend)
 	pip install -r requirements.txt
 
-dev-install: ## Instala dependências de desenvolvimento
+dev-install: ## Instala dependências de desenvolvimento (backend)
 	pip install -r requirements-dev.txt
 
-test: ## Executa testes
+frontend-install: ## Instala dependências do frontend (Node.js)
+	cd frontend && npm install
+
+frontend-dev: ## Inicia o frontend em modo de desenvolvimento
+	cd frontend && npm run dev
+
+frontend-build: ## Build de produção do frontend
+	cd frontend && npm run build
+
+test: ## Executa testes (backend)
 	pytest backend/tests/ -v
 
 test-cov: ## Executa testes com cobertura
 	pytest backend/tests/ --cov=backend/app --cov-report=html --cov-report=term
 
-lint: ## Executa linting
+lint: ## Executa linting (backend)
 	flake8 backend/
 	mypy backend/
 
-format: ## Formata código
+format: ## Formata código (backend)
 	black backend/
 	isort backend/
 
@@ -34,8 +43,10 @@ clean: ## Remove arquivos temporários
 	rm -rf dist
 	rm -rf build
 	rm -rf *.egg-info
+	rm -rf frontend/dist
+	rm -rf frontend/node_modules/.vite
 
-docker-build: ## Build das imagens Docker
+docker-build: ## Build das imagens Docker (backend + frontend)
 	docker-compose build
 
 docker-up: ## Inicia containers
@@ -63,7 +74,9 @@ redis-cli: ## Abre Redis CLI
 	docker-compose exec redis redis-cli
 
 init: docker-build docker-up migrate ## Inicialização completa do projeto
-	@echo "✅ Projeto inicializado! Acesse http://localhost:5000"
+	@echo "✅ Projeto inicializado!"
+	@echo "   Backend API: http://localhost:5000/api/v1/"
+	@echo "   Frontend:    http://localhost:3000"
 
 restart: docker-down docker-up ## Reinicia containers
 
