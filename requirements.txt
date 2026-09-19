@@ -3,10 +3,10 @@ Flask==3.0.0
 Werkzeug==3.0.1
 
 # Database
-SQLAlchemy==2.0.23
-Flask-SQLAlchemy==3.1.1
-Flask-Migrate==4.0.5
-psycopg2-binary==2.9.9
+SQLAlchemy>=2.0.36
+Flask-SQLAlchemy>=3.1.1
+Flask-Migrate>=4.0.5
+psycopg2-binary>=2.9.9
 
 # Redis & Caching
 redis==5.0.1
