@@ -18,8 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 @legacy_bp.route("/")
+@legacy_bp.route("/login")
+@legacy_bp.route("/register")
+@legacy_bp.route("/dashboard")
+@legacy_bp.route("/integrations")
+@legacy_bp.route("/compliance")
 def index():
-    """Renderiza a página principal (frontend existente)."""
+    """Renderiza a página principal / SPA React."""
     return render_template("index.html")
 
 

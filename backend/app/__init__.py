@@ -40,11 +40,19 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     Returns:
         Instância configurada do Flask.
     """
-    # Configurar caminhos de templates/static
-    template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../templates"))
-    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../static"))
-
-    app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+    # Configurar caminhos de templates/static (prioriza build do React SPA se existir)
+    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+    if os.path.exists(os.path.join(dist_dir, "index.html")):
+        app = Flask(
+            __name__,
+            template_folder=dist_dir,
+            static_folder=os.path.join(dist_dir, "assets"),
+            static_url_path="/assets",
+        )
+    else:
+        template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../templates"))
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../static"))
+        app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
     # Carregar configuração
     config = get_config()

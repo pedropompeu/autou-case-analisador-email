@@ -1,20 +1,23 @@
 # Multi-stage build para otimização de imagem
-FROM python:3.11-slim as builder
+# Stage 1: Build do Frontend React SPA
+FROM node:20-alpine AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci --quiet
+COPY frontend/ ./
+RUN npm run build
 
+# Stage 2: Compilação de dependências Python
+FROM python:3.11-slim AS builder
 WORKDIR /build
-
-# Instalar dependências de sistema necessárias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
-
-# Copiar requirements e instalar dependências Python
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Stage final - imagem mínima
+# Stage 3: Imagem final de execução
 FROM python:3.11-slim
-
 WORKDIR /app
 
 # Criar usuário não-root para segurança
@@ -27,11 +30,16 @@ COPY --from=builder /root/.local /home/appuser/.local
 ENV PATH=/home/appuser/.local/bin:$PATH
 ENV PYTHONPATH=/app:$PYTHONPATH
 
-# Copiar código da aplicação
+# Copiar código da aplicação backend e templates/static de fallback
 COPY backend/ ./backend/
 COPY templates/ ./templates/
 COPY static/ ./static/
 COPY wsgi.py ./wsgi.py
+COPY app.py ./app.py
+COPY celery_worker.py ./celery_worker.py
+
+# Copiar o build do Frontend React SPA para o container do backend
+COPY --from=frontend-builder /frontend/dist ./frontend/dist
 
 # Ajustar permissões
 RUN chown -R appuser:appuser /app /home/appuser/.local

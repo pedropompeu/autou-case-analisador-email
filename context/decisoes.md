@@ -73,7 +73,8 @@ criado: 2026-09-12
   **Por quê:** Conectar integralmente os recursos enterprise desenvolvidos no backend à interface de usuário (`AnalyzePage`, `DashboardPage`, `IntegrationsPage` e `CompliancePage`), fornecendo visualização de entidades NER, alertas de segurança/quarentena, regeneração dinâmica de tom, workflow de chamados, gestão de regras de SLA, webhooks HMAC, API keys e central LGPD.
   **Fecha:** Consumo desacoplado de todas as APIs v1 no frontend SPA.
   **Descartado:** Manter a interface restrita apenas à análise básica de texto.
-
-
-
+- [2026-09-19] (i) **Unificação de empacotamento: Multi-stage Docker build e entrega do React SPA pelo Flask backend.**
+  **Por quê:** Permitir que o backend Flask sirva nativamente os artefatos compilados do React SPA (`frontend/dist`) na raiz `/` e rotas SPA (`/login`, `/dashboard`, `/integrations`, `/compliance`), garantindo que tanto o acesso direto à porta do backend (`:5000` / Render) quanto pelo Nginx (`:3001`) apresentem a interface moderna React Enterprise em vez do mockup legado Jinja2.
+  **Fecha:** Inconsistência de layout entre porta backend e frontend em execução local ou deploy em nuvem monolítica.
+  **Descartado:** Manter templates Jinja2 obsoletos como rota padrão na raiz do backend.
 
