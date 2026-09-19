@@ -18,10 +18,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await login(username, password);
-      signIn(res.data.access_token, res.data.user);
+      signIn(res.data.access_token, res.data.user || { username: res.data.username, role: res.data.role });
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Credenciais inválidas.");
+      const data = err.response?.data;
+      setError(data?.error || data?.message || "Credenciais inválidas.");
     } finally {
       setLoading(false);
     }

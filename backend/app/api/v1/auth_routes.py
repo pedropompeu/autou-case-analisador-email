@@ -102,6 +102,17 @@ def register():
         tenant_id=tenant.id,
     )
 
+    # Criar token de acesso com claims corporativas
+    additional_claims = {
+        "user_id": new_user.id,
+        "tenant_id": tenant.id,
+        "role": new_user.role,
+    }
+    access_token = create_access_token(
+        identity=new_user.username,
+        additional_claims=additional_claims,
+    )
+
     logger.info(
         f"New user registered: {new_user.username} (Role: {new_user.role}, Tenant: {tenant.slug})"
     )
@@ -109,9 +120,14 @@ def register():
         jsonify(
             {
                 "message": "User created successfully",
+                "access_token": access_token,
+                "username": new_user.username,
+                "role": new_user.role,
+                "tenant_id": tenant.id,
                 "user": {
                     "id": new_user.id,
                     "username": new_user.username,
+                    "email": new_user.email,
                     "role": new_user.role,
                     "tenant_id": tenant.id,
                     "tenant_slug": tenant.slug,
@@ -174,6 +190,14 @@ def login():
                 "username": user.username,
                 "role": user.role,
                 "tenant_id": user.tenant_id,
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role,
+                    "tenant_id": user.tenant_id,
+                    "tenant_slug": user.tenant_rel.slug if user.tenant_rel else None,
+                },
             }
         ),
         200,

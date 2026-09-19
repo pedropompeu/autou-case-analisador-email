@@ -19,10 +19,22 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await register(form.username, form.email, form.password);
-      signIn(res.data.access_token, res.data.user);
-      navigate("/");
+      if (res.data?.access_token) {
+        signIn(res.data.access_token, res.data.user);
+        navigate("/");
+      } else {
+        navigate("/login");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Erro ao registrar.");
+      const data = err.response?.data;
+      if (data?.details) {
+        const detailsStr = Object.entries(data.details)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" | ");
+        setError(`${data.error || "Erro"}: ${detailsStr}`);
+      } else {
+        setError(data?.error || data?.message || "Erro ao registrar usuário.");
+      }
     } finally {
       setLoading(false);
     }
