@@ -1,10 +1,12 @@
-// App.jsx — Roteamento principal e shell da aplicação
+// App.jsx — Roteamento principal e shell da aplicação corporativa
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AnalyzePage from "./pages/AnalyzePage";
 import DashboardPage from "./pages/DashboardPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
+import CompliancePage from "./pages/CompliancePage";
 import "./App.css";
 
 // Guard para rotas protegidas
@@ -19,15 +21,25 @@ function Navbar() {
   if (!user) return null;
   return (
     <nav className="navbar">
-      <span className="navbar-brand">AutoU <span>Email Analyzer</span></span>
+      <span className="navbar-brand">AutoU <span>Email Analyzer Enterprise</span></span>
       <div className="navbar-nav">
         <NavLink to="/" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`} end>
-          Analisar
+          Triagem IA
         </NavLink>
         <NavLink to="/dashboard" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-          Dashboard
+          Dashboard ROI
         </NavLink>
-        <button className="btn-ghost" style={{ padding: "0.35rem 0.8rem", fontSize: "0.85rem" }} onClick={signOut}>
+        <NavLink to="/integrations" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Automações & APIs
+        </NavLink>
+        <NavLink to="/compliance" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Governança LGPD
+        </NavLink>
+        <button
+          className="btn-ghost"
+          style={{ padding: "0.35rem 0.8rem", fontSize: "0.85rem", marginLeft: "0.5rem" }}
+          onClick={signOut}
+        >
           Sair ({user.username})
         </button>
       </div>
@@ -52,6 +64,14 @@ export default function App() {
               <Route
                 path="/dashboard"
                 element={<PrivateRoute><DashboardPage /></PrivateRoute>}
+              />
+              <Route
+                path="/integrations"
+                element={<PrivateRoute><IntegrationsPage /></PrivateRoute>}
+              />
+              <Route
+                path="/compliance"
+                element={<PrivateRoute><CompliancePage /></PrivateRoute>}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

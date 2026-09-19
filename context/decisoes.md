@@ -69,6 +69,11 @@ criado: 2026-09-12
   **Fecha:** Falhas no workflow de CI para push/PR.
   **Descartado:** Desativar steps de segurança ou ignorar verificação de tipos.
 
+- [2026-09-19] (i) **Expansão do Frontend React SPA (NER, Sentimento, Fraude, Tons, ROI, Automações e LGPD).**
+  **Por quê:** Conectar integralmente os recursos enterprise desenvolvidos no backend à interface de usuário (`AnalyzePage`, `DashboardPage`, `IntegrationsPage` e `CompliancePage`), fornecendo visualização de entidades NER, alertas de segurança/quarentena, regeneração dinâmica de tom, workflow de chamados, gestão de regras de SLA, webhooks HMAC, API keys e central LGPD.
+  **Fecha:** Consumo desacoplado de todas as APIs v1 no frontend SPA.
+  **Descartado:** Manter a interface restrita apenas à análise básica de texto.
+
 
 
 
