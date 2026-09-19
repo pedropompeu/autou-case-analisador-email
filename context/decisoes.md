@@ -38,6 +38,13 @@ criado: 2026-09-12
   **Fecha:** Modelo operacional do repositório e da orquestração de IAs.
   **Descartado:** Tratar todos os repositórios como projetos descartáveis de cliente ou exclusivamente internos.
 
+## Frontend e Integração {#frontend}
+
+- [2026-09-19] (d) **Migração do frontend de HTML/Jinja2 para React + Vite desacoplado.**
+  **Por quê:** Pedro Pompeu autorizou a criação de `frontend/` com React (Vite) como SPA headless consumindo exclusivamente `/api/v1/*` via Axios/fetch — alinhado ao modelo "backend headless" já declarado no `docker-compose.yml` e `README.md`.
+  **Fecha:** Tecnologia de frontend e modelo de integração entre frontend e backend.
+  **Descartado:** Manter HTML/Jinja2 legado como único frontend (limita escalabilidade e impede separação de responsabilidades).
+
 ## Organização do Repositório {#organizacao}
 
 - [2026-09-18] (d) **Reestruturação profunda: remoção de ~35 arquivos redundantes e consolidação de docs.**

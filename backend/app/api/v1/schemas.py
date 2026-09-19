@@ -52,3 +52,38 @@ class ErrorResponseSchema(Schema):
     error = fields.Str(required=True)
     message = fields.Str(required=False)
     details = fields.Dict(required=False)
+
+
+class FeedbackRequestSchema(Schema):
+    """Schema para validar requisição de feedback (human-in-the-loop)."""
+
+    analysis_id = fields.Int(
+        required=True,
+        error_messages={"required": "analysis_id is required"},
+    )
+    approved = fields.Bool(
+        required=True,
+        error_messages={"required": "approved is required"},
+    )
+    corrected_category = fields.Str(
+        load_default=None,
+        validate=validate.OneOf(["Produtivo", "Improdutivo"]),
+    )
+    corrected_summary = fields.Str(load_default=None)
+    notes = fields.Str(load_default=None, validate=validate.Length(max=2000))
+
+
+class StatsResponseSchema(Schema):
+    """Schema para resposta de métricas agregadas."""
+
+    total_analyses = fields.Int(required=True)
+    productive_count = fields.Int(required=True)
+    unproductive_count = fields.Int(required=True)
+    productive_percentage = fields.Float(required=True)
+    unproductive_percentage = fields.Float(required=True)
+    avg_processing_time_ms = fields.Float(required=True)
+    cached_count = fields.Int(required=True)
+    total_feedbacks = fields.Int(required=True)
+    corrections_count = fields.Int(required=True)
+    time_saved_estimate_hours = fields.Float(required=True)
+
