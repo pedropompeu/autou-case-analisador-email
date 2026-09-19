@@ -85,7 +85,10 @@ export default function AnalyzePage() {
       if (file) {
         const fd = new FormData();
         fd.append("file", file);
-        if (emailContent) fd.append("email_content", emailContent);
+        if (emailContent) {
+          fd.append("text", emailContent);
+          fd.append("email_content", emailContent);
+        }
         if (subject) fd.append("subject", subject);
         if (senderEmail) fd.append("sender_email", senderEmail);
         fd.append("tone", selectedTone);
@@ -101,7 +104,15 @@ export default function AnalyzePage() {
       }
       setResult(res.data);
     } catch (err) {
-      setError(err.response?.data?.message || "Erro ao analisar o e-mail.");
+      const data = err.response?.data;
+      if (data?.details) {
+        const detailsStr = Object.entries(data.details)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" | ");
+        setError(`${data.error || "Erro de validação"}: ${detailsStr}`);
+      } else {
+        setError(data?.error || data?.message || "Erro ao analisar o e-mail.");
+      }
     } finally {
       setLoading(false);
     }

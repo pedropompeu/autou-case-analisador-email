@@ -1,27 +1,35 @@
 """
 Schemas de validação usando Marshmallow.
 """
-from marshmallow import Schema, fields, validate
+from marshmallow import EXCLUDE, Schema, fields, pre_load, validate
 
 
 class EmailAnalysisRequestSchema(Schema):
     """Schema para validar requisição de análise de email."""
 
+    class Meta:
+        unknown = EXCLUDE
+
     text = fields.Str(
         required=True,
-        validate=validate.Length(min=10, max=10000),
+        validate=validate.Length(min=3, max=50000),
         error_messages={
-            "required": "Email text is required",
-            "invalid": "Email text must be a string",
+            "required": "O texto do email é obrigatório",
+            "invalid": "O texto do email deve ser uma string",
         },
     )
 
+    email_content = fields.Str(load_default=None)
+    sender_email = fields.Str(load_default=None)
+    subject = fields.Str(load_default=None)
     thread_id = fields.Str(load_default=None, validate=validate.Length(max=100))
     tone = fields.Str(
         load_default="formal",
         validate=validate.OneOf(["formal", "empatico", "negociacao", "juridico", "direto"]),
     )
 
+    use_thread_context = fields.Bool(load_default=True)
+    save_history = fields.Bool(load_default=True)
     language = fields.Str(
         load_default="pt",
         validate=validate.OneOf(["pt", "en", "es"]),
@@ -29,6 +37,21 @@ class EmailAnalysisRequestSchema(Schema):
 
     store_in_db = fields.Bool(load_default=True)
     async_mode = fields.Bool(load_default=False, data_key="async")
+
+    @pre_load
+    def preprocess_input(self, data, **kwargs):
+        if isinstance(data, dict):
+            # Se 'text' não foi enviado, usar 'email_content'
+            if not data.get("text") and data.get("email_content"):
+                data["text"] = data["email_content"]
+            # Compor assunto ao corpo se fornecido
+            subj = data.get("subject", "").strip() if data.get("subject") else ""
+            txt = data.get("text", "").strip() if data.get("text") else ""
+            if subj and txt and not txt.startswith(f"Assunto: {subj}"):
+                data["text"] = f"Assunto: {subj}\n\n{txt}"
+            elif subj and not txt:
+                data["text"] = f"Assunto: {subj}"
+        return data
 
 
 class EmailAnalysisResponseSchema(Schema):

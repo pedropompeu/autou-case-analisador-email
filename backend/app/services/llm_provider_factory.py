@@ -31,8 +31,9 @@ def create_llm_provider() -> LLMProvider:
     if api_key:
         providers.append(GeminiProvider(api_key=api_key, model_name=model_name))
 
-    # Se configurado fallback ou para resiliência de desenvolvimento local
-    if current_app.config.get("ENABLE_MOCK_FALLBACK", False) or not providers:
+    # No ambiente de desenvolvimento ou se habilitado fallback, incluir MockLLMProvider no final da cadeia
+    is_dev = current_app.config.get("ENV") == "development" or current_app.config.get("DEBUG", False)
+    if current_app.config.get("ENABLE_MOCK_FALLBACK", is_dev) or not providers:
         providers.append(MockLLMProvider())
 
     if len(providers) == 1:

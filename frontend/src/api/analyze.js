@@ -13,6 +13,7 @@ export const analyzeEmail = (
   saveHistory = true
 ) =>
   client.post("/analyze", {
+    text: subject ? `Assunto: ${subject}\n\n${emailContent}` : emailContent,
     email_content: emailContent,
     sender_email: senderEmail,
     subject,

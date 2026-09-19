@@ -3,6 +3,7 @@ Rotas da API v1 para análise de emails.
 """
 import io
 import logging
+from typing import Optional
 
 import pypdf
 from flask import jsonify, request
@@ -139,20 +140,26 @@ def analyze_email():
 
 
 @api_v1_bp.route("/analyze/<int:analysis_id>/regenerate-response", methods=["POST"])
+@api_v1_bp.route("/emails/<int:analysis_id>/regenerate-tone", methods=["POST"])
+@api_v1_bp.route("/analyze/regenerate-tone", methods=["POST"])
 @jwt_required()
 @limiter.limit("20 per minute")
-def regenerate_response_tone(analysis_id):
+def regenerate_response_tone(analysis_id: Optional[int] = None):
     """
     Regenera a resposta sugerida com um novo tom comunicativo (#8).
     Tons disponíveis: formal, empatico, negociacao, juridico, direto.
     """
     data = request.get_json() or {}
+    target_id = analysis_id or data.get("analysis_id") or data.get("id")
+    if not target_id:
+        return jsonify({"error": "analysis_id is required"}), 400
+
     new_tone = data.get("tone", "formal")
     tenant_id = get_current_tenant_id()
 
     service = _get_analysis_service()
     result = service.regenerate_response(
-        analysis_id=analysis_id, new_tone=new_tone, tenant_id=tenant_id
+        analysis_id=int(target_id), new_tone=new_tone, tenant_id=tenant_id
     )
 
     if "error" in result:
@@ -282,7 +289,9 @@ def analyze_email_with_file():
       503:
         description: Serviço de IA indisponível
     """
-    body_text = request.form.get("text", "").strip()
+    body_text = (request.form.get("text") or request.form.get("email_content") or "").strip()
+    subj = request.form.get("subject", "").strip()
+    tone = request.form.get("tone", "formal").strip()
     attachment_text = ""
 
     # Processar arquivo anexo
@@ -307,15 +316,18 @@ def analyze_email_with_file():
 
     # Combinar texto do corpo e anexo
     full_email_text = body_text
+    if subj and not full_email_text.startswith(f"Assunto: {subj}"):
+        full_email_text = f"Assunto: {subj}\n\n{full_email_text}".strip()
+
     if attachment_text:
-        full_email_text += f"\n\n--- CONTEÚDO DO ANEXO ---\n{attachment_text}"
+        full_email_text += f"\n\n--- CONTEÚDO DO ANEXO ---\n{attachment_text}".strip()
 
     if not full_email_text.strip():
         return jsonify({"error": "No valid text or file provided"}), 400
 
-    if len(full_email_text) > 10000:
+    if len(full_email_text) > 50000:
         return (
-            jsonify({"error": "Email content too large (max 10000 characters)"}),
+            jsonify({"error": "Email content too large (max 50000 characters)"}),
             400,
         )
 
@@ -328,6 +340,7 @@ def analyze_email_with_file():
         full_email_text,
         tenant_id=tenant_id,
         user_id=user_id,
+        tone=tone,
     )
 
     if "error" in result:
