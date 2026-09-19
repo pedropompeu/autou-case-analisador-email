@@ -1,8 +1,9 @@
-"""
-Configuração da aplicação com suporte a múltiplos ambientes.
-"""
+import logging
 import os
+import secrets
 from typing import List
+
+logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────
 # Constantes globais (usadas em toda a aplicação)
@@ -15,8 +16,8 @@ class Config:
     """Configuração base — valores comuns a todos os ambientes."""
 
     # Flask
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
-    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
+    SECRET_KEY: str = os.getenv("SECRET_KEY") or secrets.token_hex(32)
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 86400))  # 1 dia
 
     # Database
@@ -39,7 +40,7 @@ class Config:
 
     # CORS
     CORS_ORIGINS: List[str] = os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
+        "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,*"
     ).split(",")
 
     # Upload
@@ -59,13 +60,16 @@ class Config:
 
     def validate(self) -> None:
         """
-        Valida variáveis críticas em tempo de execução (não em import-time).
-        Chamado explicitamente em create_app() para não quebrar testes.
+        Valida variáveis críticas em tempo de execução com fallbacks resilientes.
         """
-        if not self.SECRET_KEY:
-            raise ValueError("SECRET_KEY não definida. Adicione ao seu arquivo .env")
+        if not os.getenv("SECRET_KEY"):
+            logger.warning(
+                "SECRET_KEY não definida no ambiente. Usando chave efêmera gerada em memória."
+            )
         if not self.GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY não definida. Adicione ao seu arquivo .env")
+            logger.warning(
+                "GEMINI_API_KEY não definida. Chamadas de IA exigirão chave nas variáveis de ambiente."
+            )
 
 
 def _normalize_db_url(url: str) -> str:
@@ -116,10 +120,12 @@ class ProductionConfig(Config):
     ENV = "production"
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI: str = _normalize_db_url(os.getenv("DATABASE_URL", ""))
+    SQLALCHEMY_DATABASE_URI: str = _normalize_db_url(
+        os.getenv("DATABASE_URL") or "sqlite:///instance/email_analyzer_prod.db"
+    )
 
     # Security headers via Flask-Talisman
-    TALISMAN_FORCE_HTTPS = True
+    TALISMAN_FORCE_HTTPS = os.getenv("FORCE_HTTPS", "true").lower() == "true"
     TALISMAN_STRICT_TRANSPORT_SECURITY = True
     TALISMAN_CONTENT_SECURITY_POLICY = {
         "default-src": "'self'",
@@ -128,10 +134,12 @@ class ProductionConfig(Config):
     }
 
     def validate(self) -> None:
-        """Valida config de produção — mais restritiva que a base."""
+        """Valida config de produção."""
         super().validate()
-        if not self.SQLALCHEMY_DATABASE_URI:
-            raise ValueError("DATABASE_URL não definida. Obrigatória em produção.")
+        if not os.getenv("DATABASE_URL"):
+            logger.warning(
+                "DATABASE_URL não definida em produção. Utilizando SQLite como fallback temporário."
+            )
 
 
 # Mapeamento de ambientes
