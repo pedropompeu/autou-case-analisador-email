@@ -23,7 +23,7 @@ class GeminiProvider(LLMProvider):
     def __init__(
         self,
         api_key: str,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-3.6-flash",
         max_retries: int = 3,
         initial_delay: float = 1.0,
     ):
@@ -46,8 +46,8 @@ class GeminiProvider(LLMProvider):
 
         self._generation_config = types.GenerateContentConfig(
             response_mime_type="application/json",
-            temperature=0.5,
-            max_output_tokens=500,
+            temperature=0.3,
+            max_output_tokens=2048,
             top_p=0.8,
             top_k=40,
         )
@@ -106,29 +106,32 @@ class GeminiProvider(LLMProvider):
 
             except Exception as e:
                 err_str = str(e).lower()
-                is_rate_limit = (
+                is_retryable = (
                     "429" in err_str
                     or "resource_exhausted" in err_str
                     or "rate limit" in err_str
                     or "quota" in err_str
+                    or "503" in err_str
+                    or "unavailable" in err_str
+                    or "high demand" in err_str
                 )
 
-                if is_rate_limit and attempt < self.max_retries - 1:
+                if is_retryable and attempt < self.max_retries - 1:
                     # Jitter: ±25% do delay calculado — evita thundering herd
                     jitter = delay * random.uniform(-0.25, 0.25)
                     sleep_for = delay + jitter
                     logger.warning(
-                        f"Rate limit hit — retrying in {sleep_for:.1f}s "
-                        f"(attempt {attempt + 1}/{self.max_retries})"
+                        f"Transient Gemini error (rate limit / 503) — retrying in {sleep_for:.1f}s "
+                        f"(attempt {attempt + 1}/{self.max_retries}): {e}"
                     )
                     time.sleep(sleep_for)
                     delay *= 2.5  # Exponential backoff
                 else:
-                    if is_rate_limit:
+                    if is_retryable:
                         logger.error(
-                            f"Max retries reached after rate limit errors: {e}"
+                            f"Max retries reached after transient API errors: {e}"
                         )
-                        error_msg = "API rate limit exceeded. Please try again later."
+                        error_msg = "API is currently experiencing high demand. Please try again in a few moments."
                     else:
                         logger.exception(f"Unexpected error calling Gemini API: {e}")
                         error_msg = f"Error communicating with AI service: {str(e)}"

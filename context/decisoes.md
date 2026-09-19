@@ -45,10 +45,25 @@ criado: 2026-09-12
   **Fecha:** Tecnologia de frontend e modelo de integração entre frontend e backend.
   **Descartado:** Manter HTML/Jinja2 legado como único frontend (limita escalabilidade e impede separação de responsabilidades).
 
-## Organização do Repositório {#organizacao}
+- [2026-09-19] (d) **Implementação da Fase 1: Motor de IA Avançado (NER, Sentimento, Fraude, Tons, Quarentena e Fallback Multi-LLM).**
+  **Por quê:** Validação com Pedro Pompeu para diferenciar o produto com inteligência corporativa. Extração estruturada de entidades financeiras (NER: valores, datas, documentos), análise de urgência e sentimento, detecção de fraude/phishing com score de risco, quarentena automática de baixa confiança (`confidence_score < 0.70`), múltiplos tons de resposta (`formal`, `empatico`, `negociacao`, `juridico`, `direto`), suporte a categorias dinâmicas por tenant e `FallbackLLMProvider` para alta disponibilidade.
+  **Fecha:** Capacidades do motor de processamento de inteligência artificial corporativa.
+  **Descartado:** IA com saída não estruturada em texto livre ou dependência de provedor único sem fallback.
 
-- [2026-09-18] (d) **Reestruturação profunda: remoção de ~35 arquivos redundantes e consolidação de docs.**
-  **Por quê:** O repositório acumulou ~20 documentos markdown gerados por IA em sessões distintas (COMECE_AQUI.txt, COMO_RODAR.txt, START_HERE.md, QUICKSTART.md, INDEX.md, etc.), 4 shell scripts redundantes com o Makefile, o `app.py` original obsoleto (substituído por `backend/`), lixo de pip (`=0.8.0`, `=1.0.0`, `=4.3.0`), e artefatos de build não versionáveis. Pedro Pompeu autorizou autonomia total para criar e deletar arquivos.
-  **Fecha:** Estrutura confusa do repositório, docs redundantes, e presença de código morto.
-  **Descartado:** Manter os ~20 documentos por "segurança" (informação redundante mais atrapalha que ajuda) ou mover para um subdiretório `docs/` (aumentava complexidade sem valor, já que o README consolidado cobre tudo).
+## Compliance, Governança & Analytics {#compliance-analytics}
+
+- [2026-09-19] (d) **Implementação da Fase 3: Compliance LGPD, Filtro DLP de Saída e Dashboard de ROI.**
+  **Por quê:** Validação com Pedro Pompeu para atendimento a exigências regulatórias do setor bancário/financeiro. Implementação do `ComplianceService` e `compliance_routes.py` cobrindo Direito ao Esquecimento (anonimização irreversível) e Exportação de Dados do Titular (LGPD Art. 18/19), expurgo periódico por retenção de dados parametrizada por tenant, filtro DLP de saída inspecionando e mascarando credenciais/APIs/IPs internos antes da exibição ao operador e dashboard com métricas de ROI (horas e valor economizado em BRL), acurácia e taxa de quarentena.
+  **Fecha:** Requisitos de governança e mensuração de valor financeiro da plataforma.
+  **Descartado:** Armazenamento indefinido sem expurgo e saída de dados sem inspeção de perda de dados.
+
+## Workflows, Colaboração & Automação {#workflows-automacao}
+
+- [2026-09-19] (d) **Implementação da Fase 4: Workflows de Atendimento, Notas Internas e Motor de Roteamento / SLA.**
+  **Por quê:** Validação com Pedro Pompeu para permitir trabalho colaborativo entre operadores e automações avançadas. Inclusão de `InternalNote` para comunicação privada da equipe na thread, controle de `status` e `assigned_to_user_id` em `EmailAnalysis`, e `RoutingEngineService` com tabela `routing_rules` para automação de quarentena, escalonamento de urgência e alertas de SLA por regras configuráveis por tenant.
+  **Fecha:** Orquestração operacional de triagem em time e motor de regras automáticas.
+  **Descartado:** Fluxo estático sem atribuição e sem suporte a notas internas entre operadores.
+
+
+
 

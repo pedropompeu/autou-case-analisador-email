@@ -12,6 +12,8 @@ from marshmallow import ValidationError
 from backend.app.api.v1 import api_v1_bp
 from backend.app.api.v1.schemas import FeedbackRequestSchema
 from backend.app import db
+from backend.app.services.audit_service import AuditService
+from backend.app.utils.tenant_context import get_current_tenant_id
 from backend.app.models.email_analysis import EmailAnalysis
 from backend.app.models.feedback import AnalysisFeedback
 from backend.app.models.user import User
@@ -26,54 +28,19 @@ feedback_schema = FeedbackRequestSchema()
 def submit_feedback():
     """
     Registra feedback do usuário sobre uma análise.
-
-    ---
-    tags:
-      - Feedback
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - analysis_id
-            - approved
-          properties:
-            analysis_id:
-              type: integer
-              description: ID da análise a avaliar
-            approved:
-              type: boolean
-              description: Se o usuário aprova a classificação da IA
-            corrected_category:
-              type: string
-              enum: [Produtivo, Improdutivo]
-              description: Categoria corrigida (obrigatório se approved=false)
-            corrected_summary:
-              type: string
-              description: Resumo corrigido (opcional)
-            notes:
-              type: string
-              description: Observações adicionais
-    responses:
-      201:
-        description: Feedback registrado com sucesso
-      400:
-        description: Dados de entrada inválidos
-      404:
-        description: Análise não encontrada
     """
     try:
         data = feedback_schema.load(request.get_json())
     except ValidationError as e:
         return jsonify({"error": "Validation failed", "details": e.messages}), 400
 
-    # Verificar se a análise existe
-    analysis = EmailAnalysis.query.filter_by(
-        id=data["analysis_id"], is_deleted=False
-    ).first()
-
+    # Verificar se a análise existe e respeita o tenant
+    tenant_id = get_current_tenant_id()
+    query = EmailAnalysis.query.filter_by(id=data["analysis_id"], is_deleted=False)
+    if tenant_id is not None:
+        query = query.filter_by(tenant_id=tenant_id)
+    
+    analysis = query.first()
     if not analysis:
         return jsonify({"error": "Analysis not found"}), 404
 
@@ -82,6 +49,7 @@ def submit_feedback():
     user = User.query.filter_by(username=current_username).first()
 
     feedback = AnalysisFeedback(
+        tenant_id=tenant_id,
         analysis_id=data["analysis_id"],
         approved=data["approved"],
         corrected_category=data.get("corrected_category"),
@@ -94,6 +62,19 @@ def submit_feedback():
     db.session.commit()
 
     action = "approved" if data["approved"] else "corrected"
+    AuditService.log(
+        action=f"feedback.{action}",
+        resource_type="AnalysisFeedback",
+        resource_id=str(feedback.id),
+        details={
+            "analysis_id": data["analysis_id"],
+            "approved": data["approved"],
+            "corrected_category": data.get("corrected_category"),
+        },
+        user_id=user.id if user else None,
+        tenant_id=tenant_id,
+    )
+
     logger.info(
         f"Feedback {action} for analysis {data['analysis_id']} "
         f"by user {current_username}"

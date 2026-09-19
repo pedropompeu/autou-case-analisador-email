@@ -16,9 +16,12 @@ class EmailAnalysisRequestSchema(Schema):
         },
     )
 
-    # Reservado para uso futuro. O prompt enviado ao LLM é atualmente fixo em
-    # português (pt-BR) independentemente deste valor. Quando o suporte
-    # multi-idioma for implementado, este campo controlará o idioma do prompt.
+    thread_id = fields.Str(load_default=None, validate=validate.Length(max=100))
+    tone = fields.Str(
+        load_default="formal",
+        validate=validate.OneOf(["formal", "empatico", "negociacao", "juridico", "direto"]),
+    )
+
     language = fields.Str(
         load_default="pt",
         validate=validate.OneOf(["pt", "en", "es"]),
@@ -29,11 +32,22 @@ class EmailAnalysisRequestSchema(Schema):
 
 
 class EmailAnalysisResponseSchema(Schema):
-    """Schema para resposta de análise."""
+    """Schema para resposta de análise com inteligência da Fase 1."""
 
+    id = fields.Int(allow_none=True)
     categoria = fields.Str(required=True)
+    subcategoria = fields.Str(allow_none=True)
     resumo = fields.Str(required=True)
     sugestao_resposta = fields.Str(required=True)
+    sentimento = fields.Str(dump_default="Neutro")
+    urgencia = fields.Str(dump_default="Media")
+    score_confianca = fields.Float(dump_default=1.0)
+    in_quarantine = fields.Bool(dump_default=False)
+    risco_fraude = fields.Float(dump_default=0.0)
+    indicios_fraude = fields.List(fields.Str(), dump_default=list)
+    entidades = fields.Dict(dump_default=dict)
+    tone = fields.Str(dump_default="formal")
+    pii_masked = fields.Bool(dump_default=False)
     cached = fields.Bool(dump_default=False)
 
 

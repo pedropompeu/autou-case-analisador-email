@@ -9,26 +9,31 @@ from flask import current_app
 
 from backend.app.services.llm_provider import LLMProvider
 from backend.app.services.gemini_provider import GeminiProvider, MockLLMProvider
+from backend.app.services.fallback_llm_provider import FallbackLLMProvider
 
 logger = logging.getLogger(__name__)
 
 
 def create_llm_provider() -> LLMProvider:
     """
-    Cria e retorna o LLM Provider adequado para o ambiente atual.
-
-    - Em testes (TESTING=True) ou quando USE_MOCK_LLM=True: retorna MockLLMProvider
-    - Em desenvolvimento/produção: retorna GeminiProvider
-
-    Returns:
-        Instância de LLMProvider configurada.
+    Cria e retorna o LLM Provider adequado para o ambiente atual com suporte a fallback.
     """
     if current_app.config.get("TESTING") or current_app.config.get("USE_MOCK_LLM"):
         logger.info("Using MockLLMProvider (TESTING or USE_MOCK_LLM is set)")
         return MockLLMProvider()
 
-    api_key = current_app.config["GEMINI_API_KEY"]
-    model_name = current_app.config.get("GEMINI_MODEL", "gemini-1.5-flash-latest")
+    api_key = current_app.config.get("GEMINI_API_KEY", "")
+    model_name = current_app.config.get("GEMINI_MODEL", "gemini-3.6-flash")
 
-    logger.debug(f"Creating GeminiProvider with model={model_name}")
-    return GeminiProvider(api_key=api_key, model_name=model_name)
+    providers = []
+    if api_key:
+        providers.append(GeminiProvider(api_key=api_key, model_name=model_name))
+    
+    # Se configurado fallback ou para resiliência de desenvolvimento local
+    if current_app.config.get("ENABLE_MOCK_FALLBACK", False) or not providers:
+        providers.append(MockLLMProvider())
+
+    if len(providers) == 1:
+        return providers[0]
+
+    return FallbackLLMProvider(providers)

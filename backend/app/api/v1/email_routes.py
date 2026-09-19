@@ -14,6 +14,8 @@ from backend.app.services.email_analysis_service import EmailAnalysisService
 from backend.app.services.llm_provider_factory import create_llm_provider
 from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.tasks import analyze_email_background
+from backend.app.utils.tenant_context import get_current_tenant_id
+from backend.app.utils.rbac import get_current_user
 from backend.app import limiter
 
 logger = logging.getLogger(__name__)
@@ -95,11 +97,19 @@ def analyze_email():
         return jsonify({"error": "Validation failed", "details": e.messages}), 400
 
     email_text = data["text"]
+    thread_id = data.get("thread_id")
+    tone = data.get("tone", "formal")
     store_in_db = data.get("store_in_db", True)
     is_async = data.get("async_mode", False)
 
+    user = get_current_user()
+    tenant_id = get_current_tenant_id()
+    user_id = user.id if user else None
+
     if is_async:
-        task = analyze_email_background.delay(email_text, store_in_db=store_in_db)
+        task = analyze_email_background.delay(
+            email_text, store_in_db=store_in_db, tenant_id=tenant_id, user_id=user_id
+        )
         return jsonify({
             "task_id": task.id,
             "status": "ACCEPTED",
@@ -107,12 +117,93 @@ def analyze_email():
         }), 202
 
     service = _get_analysis_service()
-    result = service.analyze_email(email_text, store_in_db=store_in_db)
+    result = service.analyze_email(
+        email_text,
+        store_in_db=store_in_db,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        thread_id=thread_id,
+        tone=tone,
+    )
 
     if "error" in result:
         return jsonify(result), 503
 
     return jsonify(result), 200
+
+
+@api_v1_bp.route("/analyze/<int:analysis_id>/regenerate-response", methods=["POST"])
+@jwt_required()
+@limiter.limit("20 per minute")
+def regenerate_response_tone(analysis_id):
+    """
+    Regenera a resposta sugerida com um novo tom comunicativo (#8).
+    Tons disponíveis: formal, empatico, negociacao, juridico, direto.
+    """
+    data = request.get_json() or {}
+    new_tone = data.get("tone", "formal")
+    tenant_id = get_current_tenant_id()
+
+    service = _get_analysis_service()
+    result = service.regenerate_response(
+        analysis_id=analysis_id, new_tone=new_tone, tenant_id=tenant_id
+    )
+
+    if "error" in result:
+        return jsonify(result), 400 if result["error"] == "Analysis not found" else 503
+
+    return jsonify(result), 200
+
+
+@api_v1_bp.route("/categories", methods=["GET", "POST"])
+@jwt_required()
+def manage_categories():
+    """
+    GET: Lista as categorias customizadas do tenant ativo (#16).
+    POST: Cria uma nova categoria dinâmica (Requer role Admin ou Operator).
+    """
+    from backend.app.models.category import CustomCategory
+    from backend.app import db
+    tenant_id = get_current_tenant_id()
+    if tenant_id is None:
+        return jsonify({"error": "No tenant context found"}), 400
+
+    if request.method == "POST":
+        data = request.get_json() or {}
+        name = data.get("name", "").strip()
+        if not name:
+            return jsonify({"error": "Category name is required"}), 400
+
+        existing = CustomCategory.query.filter_by(tenant_id=tenant_id, name=name).first()
+        if existing:
+            return jsonify({"error": "Category already exists for this organization"}), 409
+
+        cat = CustomCategory(
+            tenant_id=tenant_id,
+            name=name,
+            description=data.get("description"),
+            action_required=data.get("action_required", True),
+        )
+        db.session.add(cat)
+        db.session.commit()
+        return jsonify({
+            "message": "Category created successfully",
+            "category": {"id": cat.id, "name": cat.name, "action_required": cat.action_required}
+        }), 201
+
+    # GET
+    categories = CustomCategory.query.filter_by(tenant_id=tenant_id, is_active=True).all()
+    return jsonify({
+        "categories": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "description": c.description,
+                "action_required": c.action_required,
+            }
+            for c in categories
+        ]
+    }), 200
 
 
 @api_v1_bp.route("/tasks/<task_id>", methods=["GET"])
@@ -211,8 +302,16 @@ def analyze_email_with_file():
             400,
         )
 
+    user = get_current_user()
+    tenant_id = get_current_tenant_id()
+    user_id = user.id if user else None
+
     service = _get_analysis_service()
-    result = service.analyze_email(full_email_text)
+    result = service.analyze_email(
+        full_email_text,
+        tenant_id=tenant_id,
+        user_id=user_id,
+    )
 
     if "error" in result:
         return jsonify(result), 503

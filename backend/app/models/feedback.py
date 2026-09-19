@@ -10,6 +10,14 @@ class AnalysisFeedback(BaseModel):
 
     __tablename__ = "analysis_feedbacks"
 
+    # Contexto multi-tenant
+    tenant_id = db.Column(
+        db.Integer,
+        db.ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # Referência à análise original
     analysis_id = db.Column(
         db.Integer,

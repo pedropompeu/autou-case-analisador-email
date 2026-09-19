@@ -3,7 +3,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: email_analyzer_db
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-email_analyzer}
@@ -23,7 +23,7 @@ services:
 
   # Redis for caching and rate limiting
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: email_analyzer_redis
     command: redis-server --appendonly yes
     volumes:
@@ -94,7 +94,7 @@ services:
       dockerfile: Dockerfile
     container_name: email_analyzer_frontend
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - backend
     networks:

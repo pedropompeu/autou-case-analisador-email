@@ -62,3 +62,62 @@ def mock_llm_provider():
     Use este fixture para testar services sem fazer chamadas reais à Gemini API.
     """
     return MockLLMProvider()
+
+
+@pytest.fixture
+def auth_headers(app):
+    """Gera headers com JWT válido para endpoints protegidos."""
+    from flask_jwt_extended import create_access_token
+    from backend.app.models.user import User
+    from backend.app.models.tenant import Tenant
+    from backend.app import db
+
+    with app.app_context():
+        tenant = Tenant.query.filter_by(slug="test-tenant").first()
+        if not tenant:
+            tenant = Tenant(name="Test Tenant", slug="test-tenant", plan="starter")
+            db.session.add(tenant)
+            db.session.commit()
+
+        user = User.query.filter_by(username="testuser").first()
+        if not user:
+            user = User(username="testuser", email="test@test.com", role="operator", tenant_id=tenant.id)
+            user.set_password("password123")
+            db.session.add(user)
+            db.session.commit()
+
+        token = create_access_token(
+            identity=user.username,
+            additional_claims={"user_id": user.id, "tenant_id": user.tenant_id, "role": user.role},
+        )
+        return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_auth_headers(app):
+    """Gera headers com JWT de Admin para endpoints administrativos."""
+    from flask_jwt_extended import create_access_token
+    from backend.app.models.user import User
+    from backend.app.models.tenant import Tenant
+    from backend.app import db
+
+    with app.app_context():
+        tenant = Tenant.query.filter_by(slug="admin-tenant").first()
+        if not tenant:
+            tenant = Tenant(name="Admin Tenant", slug="admin-tenant", plan="enterprise")
+            db.session.add(tenant)
+            db.session.commit()
+
+        user = User.query.filter_by(username="adminuser").first()
+        if not user:
+            user = User(username="adminuser", email="admin@test.com", role="admin", tenant_id=tenant.id)
+            user.set_password("adminpass123")
+            db.session.add(user)
+            db.session.commit()
+
+        token = create_access_token(
+            identity=user.username,
+            additional_claims={"user_id": user.id, "tenant_id": user.tenant_id, "role": user.role},
+        )
+        return {"Authorization": f"Bearer {token}"}
+

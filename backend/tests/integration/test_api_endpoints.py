@@ -25,12 +25,15 @@ def test_api_v1_health(client):
     assert "checks" in data
 
 
-def test_analyze_endpoint_valid_input(client):
+def test_analyze_endpoint_valid_input(client, auth_headers):
     """Testa análise com input válido."""
     payload = {"text": "Olá, preciso de ajuda com meu projeto de software."}
 
     response = client.post(
-        "/api/v1/analyze", data=json.dumps(payload), content_type="application/json"
+        "/api/v1/analyze",
+        data=json.dumps(payload),
+        content_type="application/json",
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -41,12 +44,15 @@ def test_analyze_endpoint_valid_input(client):
     assert "sugestao_resposta" in data
 
 
-def test_analyze_endpoint_invalid_input(client):
+def test_analyze_endpoint_invalid_input(client, auth_headers):
     """Testa análise com input inválido."""
     payload = {"text": "abc"}  # Muito curto (min 10 chars)
 
     response = client.post(
-        "/api/v1/analyze", data=json.dumps(payload), content_type="application/json"
+        "/api/v1/analyze",
+        data=json.dumps(payload),
+        content_type="application/json",
+        headers=auth_headers,
     )
 
     assert response.status_code == 400
@@ -55,12 +61,15 @@ def test_analyze_endpoint_invalid_input(client):
     assert "error" in data
 
 
-def test_analyze_endpoint_missing_text(client):
+def test_analyze_endpoint_missing_text(client, auth_headers):
     """Testa análise sem campo text."""
     payload = {}
 
     response = client.post(
-        "/api/v1/analyze", data=json.dumps(payload), content_type="application/json"
+        "/api/v1/analyze",
+        data=json.dumps(payload),
+        content_type="application/json",
+        headers=auth_headers,
     )
 
     assert response.status_code == 400

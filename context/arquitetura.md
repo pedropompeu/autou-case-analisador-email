@@ -68,9 +68,15 @@ relacionado:
 - [2026-09-19] (i) Adicionados: `backend/app/models/feedback.py` (AnalysisFeedback), `backend/app/api/v1/feedback_routes.py`, `backend/app/api/v1/stats_routes.py`, schemas FeedbackRequestSchema + StatsResponseSchema.
 - [2026-09-19] (i) Migration inicial criada: `backend/migrations/versions/0001_initial_schema.py` cobre users, email_analyses, analysis_feedbacks.
 - [2026-09-19] (i) Frontend React criado em `frontend/`: Vite 5, React 19, React Router v7, Axios; páginas Login, Register, Analyze, Dashboard; Nginx proxy reverso para `/api/`.
+- [2026-09-19] (i) Fase 0 Enterprise implementada: modelos `Tenant` (`models/tenant.py`) e `AuditLog` (`models/audit_log.py`), RBAC (`utils/rbac.py` com papéis admin/operator/viewer/auditor), PII Sanitizer (`utils/pii_sanitizer.py`), Criptografia At-Rest (`utils/crypto.py`), JWT Blocklist via Redis (`utils/jwt_blocklist.py`), blueprint administrativo `/api/v1/admin` e migration `b4c0bd8ae6f7_phase_0_multi_tenant_rbac_audit.py`.
+- [2026-09-19] (i) Fase 1 Motor de IA implementada: `CustomCategory` (`models/category.py`), `FallbackLLMProvider` (`services/fallback_llm_provider.py`), extração de NER, sentimento, urgência, score de fraude, quarentena de baixa confiança, múltiplos tons de resposta (`/analyze/<id>/regenerate-response`), memória de thread e migration `c87e4445dd70_phase_1_advanced_ai_engine.py`.
+- [2026-09-19] (i) Fase 2 Integrações Corporativas implementada: `WebhookSubscription` e `WebhookDelivery` (`models/webhook.py`), `WebhookService` (`services/webhook_service.py` com HMAC-SHA256), parser de email RFC822/MIME (`utils/email_parser.py`), rotas `/api/v1/webhooks` e `/api/v1/ingest/eml`, e migration `39030255bf15_phase_2_webhooks_and_ingestion.py`.
+- [2026-09-19] (i) Fase 3 Compliance & Observabilidade implementada: `ComplianceService` (`services/compliance_service.py`) com Direito ao Esquecimento e Exportação LGPD, filtro DLP de saída (`utils/dlp_filter.py`), expurgo por retenção de dados, rotas `/api/v1/compliance/*` e dashboard avançado de ROI e distribuição em `/api/v1/stats`.
+- [2026-09-19] (i) Fase 4 Workflows & Automação implementada: modelos `InternalNote` (`models/internal_note.py`) e `RoutingRule` (`models/routing_rule.py`), `RoutingEngineService` (`services/routing_engine_service.py`), rotas de notas, status e atribuição em `/api/v1/workflow_routes.py` e migration `d9e71ab523f1_phase_4_workflows_notes_rules.py`.
 
 ## Pontos de integração {#integracoes}
 
 - [2026-09-12] (e) Ferramentas de IA suportadas nativamente: Claude Code CLI (`CLAUDE.md`), Antigravity / Gemini CLI (`GEMINI.md` e `AGENTS.md`).
 - [2026-09-18] (e) ← `backend/app/services/llm_provider.py` Interface `LLMProvider` abstrata permite trocar entre Gemini, OpenAI, Claude etc.
 - [2026-09-18] (e) ← `docker-compose.yml` Serviços: PostgreSQL 15, Redis 7, Flask backend, Celery worker.
+

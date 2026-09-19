@@ -185,6 +185,19 @@ def register_blueprints(app: Flask) -> None:
 
 def register_error_handlers(app: Flask) -> None:
     """Registra handlers globais de erro com respostas JSON padronizadas."""
+    from backend.app.utils.jwt_blocklist import is_token_in_blocklist
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload: dict) -> bool:
+        jti = jwt_payload.get("jti")
+        return is_token_in_blocklist(jti) if jti else False
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return jsonify({
+            "error": "token_revoked",
+            "message": "This token has been revoked / logged out"
+        }), 401
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):

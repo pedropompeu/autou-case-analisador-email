@@ -31,7 +31,7 @@ class Config:
 
     # AI Service
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
     # Rate Limiting
     RATELIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
@@ -40,7 +40,7 @@ class Config:
 
     # CORS
     CORS_ORIGINS: List[str] = os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000"
+        "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
     ).split(",")
 
     # Upload
