@@ -5,27 +5,32 @@ localmente ANTES do payload ser transmitido para qualquer provedor LLM externo.
 Conformidade rigorosa com LGPD e GDPR.
 """
 import re
-from typing import Tuple, Dict, Any, List
-
+from typing import Any, Dict, Tuple
 
 # Regexes compilados para performance
 _CPF_REGEX = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}[-.]?\d{2}\b")
 _CNPJ_REGEX = re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}[-.]?\d{2}\b")
 _CREDIT_CARD_REGEX = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b|\b\d{13,19}\b")
 _EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
-_PHONE_REGEX = re.compile(r"(?:\+?55\s?)?(?:\(?0?[1-9]{2}\)?\s?)?(?:9[.\s]?\d{4}|\d{4})[-.\s]?\d{4}\b")
-_BANK_ACCOUNT_REGEX = re.compile(r"(?i)\b(?:ag[eê]ncia|ag|conta|cc|c/c|cta)[:\s]+(\d{3,6}(?:-\d)?)\b")
-_PIX_UUID_REGEX = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
+_PHONE_REGEX = re.compile(
+    r"(?:\+?55\s?)?(?:\(?0?[1-9]{2}\)?\s?)?(?:9[.\s]?\d{4}|\d{4})[-.\s]?\d{4}\b"
+)
+_BANK_ACCOUNT_REGEX = re.compile(
+    r"(?i)\b(?:ag[eê]ncia|ag|conta|cc|c/c|cta)[:\s]+(\d{3,6}(?:-\d)?)\b"
+)
+_PIX_UUID_REGEX = re.compile(
+    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
+)
 
 
 def sanitize_pii(text: str, mask_emails: bool = False) -> Tuple[str, Dict[str, Any]]:
     """
     Sanitiza PII no texto substituindo dados sensíveis por placeholders seguros.
-    
+
     Args:
         text: Texto original com possíveis dados confidenciais.
         mask_emails: Se True, mascara também emails no corpo do texto.
-        
+
     Returns:
         Tuple contendo:
         1. Texto sanitizado seguro para envio a LLM externo.
@@ -98,6 +103,7 @@ def sanitize_pii(text: str, mask_emails: bool = False) -> Tuple[str, Dict[str, A
 
     # 7. Emails (opcional no corpo)
     if mask_emails:
+
         def _mask_email(match):
             counts["email"] += 1
             return f"[EMAIL_MASCARADO_{counts['email']}]"

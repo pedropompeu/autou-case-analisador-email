@@ -19,15 +19,15 @@ class CustomCategory(BaseModel):
     )
     name = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(255), nullable=True)
-    action_required = db.Column(db.Boolean, nullable=False, default=True)  # True = Produtivo / False = Improdutivo
+    action_required = db.Column(
+        db.Boolean, nullable=False, default=True
+    )  # True = Produtivo / False = Improdutivo
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     # Relacionamento
     tenant = db.relationship("Tenant", backref=db.backref("categories", lazy="dynamic"))
 
-    __table_args__ = (
-        db.UniqueConstraint("tenant_id", "name", name="uq_tenant_category_name"),
-    )
+    __table_args__ = (db.UniqueConstraint("tenant_id", "name", name="uq_tenant_category_name"),)
 
     def __repr__(self):
         return f"<CustomCategory {self.id} - {self.name} (Tenant {self.tenant_id})>"

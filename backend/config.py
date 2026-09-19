@@ -4,7 +4,6 @@ Configuração da aplicação com suporte a múltiplos ambientes.
 import os
 from typing import List
 
-
 # ──────────────────────────────────────────────
 # Constantes globais (usadas em toda a aplicação)
 # ──────────────────────────────────────────────
@@ -18,7 +17,7 @@ class Config:
     # Flask
     SECRET_KEY: str = os.getenv("SECRET_KEY", "")
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
-    JWT_ACCESS_TOKEN_EXPIRES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 86400)) # 1 dia
+    JWT_ACCESS_TOKEN_EXPIRES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 86400))  # 1 dia
 
     # Database
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -51,7 +50,9 @@ class Config:
 
     # Sentry (Observability)
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
-    PROMETHEUS_METRICS_ENABLED: bool = os.getenv("PROMETHEUS_METRICS_ENABLED", "true").lower() == "true"
+    PROMETHEUS_METRICS_ENABLED: bool = (
+        os.getenv("PROMETHEUS_METRICS_ENABLED", "true").lower() == "true"
+    )
 
     # Cache TTL
     CACHE_DEFAULT_TIMEOUT: int = 3600  # 1 hora
@@ -62,13 +63,9 @@ class Config:
         Chamado explicitamente em create_app() para não quebrar testes.
         """
         if not self.SECRET_KEY:
-            raise ValueError(
-                "SECRET_KEY não definida. Adicione ao seu arquivo .env"
-            )
+            raise ValueError("SECRET_KEY não definida. Adicione ao seu arquivo .env")
         if not self.GEMINI_API_KEY:
-            raise ValueError(
-                "GEMINI_API_KEY não definida. Adicione ao seu arquivo .env"
-            )
+            raise ValueError("GEMINI_API_KEY não definida. Adicione ao seu arquivo .env")
 
 
 class DevelopmentConfig(Config):
@@ -92,9 +89,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_ECHO = False
     # SQLite em memória — sem necessidade de PostgreSQL para testes unitários
-    SQLALCHEMY_DATABASE_URI: str = os.getenv(
-        "DATABASE_URL", "sqlite:///:memory:"
-    )
+    SQLALCHEMY_DATABASE_URI: str = os.getenv("DATABASE_URL", "sqlite:///:memory:")
     RATELIMIT_ENABLED = False
 
     # Valores fixos para testes — não precisam de .env
@@ -127,9 +122,7 @@ class ProductionConfig(Config):
         """Valida config de produção — mais restritiva que a base."""
         super().validate()
         if not self.SQLALCHEMY_DATABASE_URI:
-            raise ValueError(
-                "DATABASE_URL não definida. Obrigatória em produção."
-            )
+            raise ValueError("DATABASE_URL não definida. Obrigatória em produção.")
 
 
 # Mapeamento de ambientes

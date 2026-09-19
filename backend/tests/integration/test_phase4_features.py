@@ -2,14 +2,14 @@
 Testes de integração para as funcionalidades da Fase 4 (Workflows, Notas Internas, Status e Regras).
 """
 import uuid
+
 import pytest
 from flask_jwt_extended import create_access_token
 
 from backend.app import db
+from backend.app.models.email_analysis import EmailAnalysis
 from backend.app.models.tenant import Tenant
 from backend.app.models.user import User
-from backend.app.models.email_analysis import EmailAnalysis
-from backend.app.models.routing_rule import RoutingRule
 
 
 @pytest.fixture
@@ -20,20 +20,38 @@ def phase4_setup(app):
         db.session.add(tenant)
         db.session.commit()
 
-        admin_user = User(username=f"admin_p4_{uid}", email=f"admin_{uid}@test.com", role="admin", tenant_id=tenant.id)
+        admin_user = User(
+            username=f"admin_p4_{uid}",
+            email=f"admin_{uid}@test.com",
+            role="admin",
+            tenant_id=tenant.id,
+        )
         admin_user.set_password("pass123")
-        operator_user = User(username=f"op_p4_{uid}", email=f"op_{uid}@test.com", role="operator", tenant_id=tenant.id)
+        operator_user = User(
+            username=f"op_p4_{uid}",
+            email=f"op_{uid}@test.com",
+            role="operator",
+            tenant_id=tenant.id,
+        )
         operator_user.set_password("pass123")
         db.session.add_all([admin_user, operator_user])
         db.session.commit()
 
         admin_token = create_access_token(
             identity=admin_user.username,
-            additional_claims={"user_id": admin_user.id, "tenant_id": tenant.id, "role": admin_user.role}
+            additional_claims={
+                "user_id": admin_user.id,
+                "tenant_id": tenant.id,
+                "role": admin_user.role,
+            },
         )
         op_token = create_access_token(
             identity=operator_user.username,
-            additional_claims={"user_id": operator_user.id, "tenant_id": tenant.id, "role": operator_user.role}
+            additional_claims={
+                "user_id": operator_user.id,
+                "tenant_id": tenant.id,
+                "role": operator_user.role,
+            },
         )
 
         return {
@@ -41,7 +59,7 @@ def phase4_setup(app):
             "admin_user": admin_user,
             "operator_user": operator_user,
             "admin_headers": {"Authorization": f"Bearer {admin_token}"},
-            "op_headers": {"Authorization": f"Bearer {op_token}"}
+            "op_headers": {"Authorization": f"Bearer {op_token}"},
         }
 
 
@@ -55,7 +73,7 @@ def test_internal_notes_workflow(client, phase4_setup):
         suggested_response="Resposta",
         content_hash=f"hash_note_{uuid.uuid4().hex[:6]}",
         category="Produtivo",
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     db.session.add(analysis)
     db.session.commit()
@@ -64,18 +82,24 @@ def test_internal_notes_workflow(client, phase4_setup):
     add_resp = client.post(
         f"/api/v1/analyze/{analysis.id}/notes",
         json={"content": "Cliente já possui proposta pré-aprovada de 15% de desconto no CRM."},
-        headers=headers
+        headers=headers,
     )
     assert add_resp.status_code == 201
     add_data = add_resp.get_json()
-    assert add_data["note"]["content"] == "Cliente já possui proposta pré-aprovada de 15% de desconto no CRM."
+    assert (
+        add_data["note"]["content"]
+        == "Cliente já possui proposta pré-aprovada de 15% de desconto no CRM."
+    )
 
     # 2. Listar notas internas
     list_resp = client.get(f"/api/v1/analyze/{analysis.id}/notes", headers=headers)
     assert list_resp.status_code == 200
     list_data = list_resp.get_json()
     assert len(list_data["notes"]) == 1
-    assert list_data["notes"][0]["content"] == "Cliente já possui proposta pré-aprovada de 15% de desconto no CRM."
+    assert (
+        list_data["notes"][0]["content"]
+        == "Cliente já possui proposta pré-aprovada de 15% de desconto no CRM."
+    )
 
 
 def test_status_and_assignment_workflow(client, phase4_setup):
@@ -90,25 +114,21 @@ def test_status_and_assignment_workflow(client, phase4_setup):
         content_hash=f"hash_assign_{uuid.uuid4().hex[:6]}",
         category="Produtivo",
         status="pending",
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     db.session.add(analysis)
     db.session.commit()
 
     # 1. Atualizar status para in_progress
     status_resp = client.patch(
-        f"/api/v1/analyze/{analysis.id}/status",
-        json={"status": "in_progress"},
-        headers=headers
+        f"/api/v1/analyze/{analysis.id}/status", json={"status": "in_progress"}, headers=headers
     )
     assert status_resp.status_code == 200
     assert status_resp.get_json()["status"] == "in_progress"
 
     # 2. Atribuir ao operador
     assign_resp = client.patch(
-        f"/api/v1/analyze/{analysis.id}/assign",
-        json={"user_id": operator_user.id},
-        headers=headers
+        f"/api/v1/analyze/{analysis.id}/assign", json={"user_id": operator_user.id}, headers=headers
     )
     assert assign_resp.status_code == 200
     assert assign_resp.get_json()["assigned_to_user_id"] == operator_user.id
@@ -126,7 +146,7 @@ def test_routing_rules_crud(client, phase4_setup):
         "condition_operator": "lte",
         "condition_value": "0.7",
         "action_type": "set_quarantine",
-        "priority": 10
+        "priority": 10,
     }
     create_resp = client.post("/api/v1/routing-rules", json=rule_data, headers=admin_headers)
     assert create_resp.status_code == 201

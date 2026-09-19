@@ -4,6 +4,7 @@ Script de gerenciamento da aplicação.
 """
 import click
 from flask.cli import FlaskGroup
+
 from backend.app import create_app, db
 from backend.app.models import EmailAnalysis
 

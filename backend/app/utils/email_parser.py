@@ -3,9 +3,10 @@ Parser robusto de emails no padrão RFC822 / MIME (.eml / IMAP payloads) (#23).
 Extrai remetente, destinatário, assunto, corpo em texto limpo e metadados de anexos.
 """
 import email
-from email import policy
 import re
-from typing import Dict, Any, List, Optional
+from email import policy
+from email.message import EmailMessage
+from typing import Any, Dict, List, cast
 
 
 def _strip_html_tags(html: str) -> str:
@@ -23,17 +24,23 @@ def _strip_html_tags(html: str) -> str:
 def parse_eml(eml_bytes_or_str: Any) -> Dict[str, Any]:
     """
     Decodifica um arquivo ou payload de email RFC822 (.eml).
-    
+
     Args:
         eml_bytes_or_str: Bytes ou string com conteúdo MIME/RFC822.
-        
+
     Returns:
         Dicionário estruturado com metadados e corpo do email.
     """
     if isinstance(eml_bytes_or_str, str):
-        msg = email.message_from_string(eml_bytes_or_str, policy=policy.default)
+        msg = cast(
+            EmailMessage,
+            email.message_from_string(eml_bytes_or_str, policy=policy.default),
+        )
     else:
-        msg = email.message_from_bytes(eml_bytes_or_str, policy=policy.default)
+        msg = cast(
+            EmailMessage,
+            email.message_from_bytes(eml_bytes_or_str, policy=policy.default),
+        )
 
     subject = msg.get("Subject", "(Sem Assunto)")
     from_addr = msg.get("From", "")
@@ -47,27 +54,30 @@ def parse_eml(eml_bytes_or_str: Any) -> Dict[str, Any]:
 
     if msg.is_multipart():
         for part in msg.walk():
-            content_type = part.get_content_type()
-            disposition = str(part.get("Content-Disposition", ""))
+            part_msg = cast(EmailMessage, part)
+            content_type = part_msg.get_content_type()
+            disposition = str(part_msg.get("Content-Disposition", ""))
 
             if "attachment" in disposition:
-                filename = part.get_filename() or "anexo"
-                payload = part.get_payload(decode=True) or b""
-                attachments.append({
-                    "filename": filename,
-                    "content_type": content_type,
-                    "size_bytes": len(payload),
-                })
+                filename = part_msg.get_filename() or "anexo"
+                payload = part_msg.get_payload(decode=True) or b""
+                attachments.append(
+                    {
+                        "filename": filename,
+                        "content_type": content_type,
+                        "size_bytes": len(payload),
+                    }
+                )
             elif content_type == "text/plain" and not body_plain:
                 try:
-                    body_plain = part.get_content()
+                    body_plain = part_msg.get_content()
                 except Exception:
-                    body_plain = str(part.get_payload(decode=True) or "")
+                    body_plain = str(part_msg.get_payload(decode=True) or "")
             elif content_type == "text/html" and not body_html:
                 try:
-                    body_html = part.get_content()
+                    body_html = part_msg.get_content()
                 except Exception:
-                    body_html = str(part.get_payload(decode=True) or "")
+                    body_html = str(part_msg.get_payload(decode=True) or "")
     else:
         content_type = msg.get_content_type()
         if content_type == "text/plain":
@@ -81,7 +91,9 @@ def parse_eml(eml_bytes_or_str: Any) -> Dict[str, Any]:
         main_text = _strip_html_tags(body_html)
 
     # Formatar corpo contextual consolidado para a IA
-    full_email_text = f"De: {from_addr}\nPara: {to_addr}\nAssunto: {subject}\nData: {date_str}\n\n{main_text}"
+    full_email_text = (
+        f"De: {from_addr}\nPara: {to_addr}\nAssunto: {subject}\nData: {date_str}\n\n{main_text}"
+    )
 
     return {
         "subject": subject,

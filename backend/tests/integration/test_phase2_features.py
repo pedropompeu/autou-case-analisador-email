@@ -5,9 +5,6 @@ Testes de integração para as funcionalidades da Fase 2:
 - API pública B2B com API Keys (#27)
 """
 import io
-import json
-from unittest.mock import patch
-from backend.app.models.webhook import WebhookSubscription, WebhookDelivery
 
 
 def test_webhook_crud_and_listing(client, auth_headers):

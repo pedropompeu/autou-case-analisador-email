@@ -2,12 +2,13 @@
 Rota de métricas agregadas e ROI para o dashboard enterprise.
 """
 import logging
-from flask import request, jsonify
+
+from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 
-from backend.app.api.v1 import api_v1_bp
 from backend.app import db
+from backend.app.api.v1 import api_v1_bp
 from backend.app.models.email_analysis import EmailAnalysis
 from backend.app.models.feedback import AnalysisFeedback
 
@@ -28,17 +29,22 @@ def get_stats():
     """
     try:
         from backend.app.utils.tenant_context import get_current_tenant_id
+
         tenant_id = get_current_tenant_id()
 
         # Parâmetros de ROI configuráveis via query params
-        hourly_rate = request.args.get("hourly_rate", default=_DEFAULT_HOURLY_OPERATOR_RATE_BRL, type=float)
-        minutes_saved = request.args.get("minutes_saved", default=_DEFAULT_MINUTES_SAVED_PER_ANALYSIS, type=float)
+        hourly_rate = request.args.get(
+            "hourly_rate", default=_DEFAULT_HOURLY_OPERATOR_RATE_BRL, type=float
+        )
+        minutes_saved = request.args.get(
+            "minutes_saved", default=_DEFAULT_MINUTES_SAVED_PER_ANALYSIS, type=float
+        )
 
         # Base query
         base_query = EmailAnalysis.query.filter_by(is_deleted=False)
         if tenant_id is not None:
             base_query = base_query.filter_by(tenant_id=tenant_id)
-        
+
         total = base_query.count()
 
         # Contagens por categoria padrão
@@ -74,9 +80,7 @@ def get_stats():
         urgency_breakdown = dict(urgency_query.group_by(EmailAnalysis.urgency).all())
 
         # Tempo médio de processamento (em ms)
-        avg_query = db.session.query(
-            func.avg(EmailAnalysis.processing_time_ms)
-        ).filter(
+        avg_query = db.session.query(func.avg(EmailAnalysis.processing_time_ms)).filter(
             EmailAnalysis.is_deleted.is_(False),
             EmailAnalysis.processing_time_ms.isnot(None),
         )
@@ -86,13 +90,14 @@ def get_stats():
         avg_processing_time_ms = round(float(avg_time_result), 1) if avg_time_result else 0
 
         # Análises em cache
-        cached_subquery = (
-            db.session.query(EmailAnalysis.content_hash)
-            .filter(EmailAnalysis.is_deleted.is_(False))
+        cached_subquery = db.session.query(EmailAnalysis.content_hash).filter(
+            EmailAnalysis.is_deleted.is_(False)
         )
         if tenant_id is not None:
             cached_subquery = cached_subquery.filter(EmailAnalysis.tenant_id == tenant_id)
-        cached_subquery = cached_subquery.group_by(EmailAnalysis.content_hash).having(func.count(EmailAnalysis.id) > 1)
+        cached_subquery = cached_subquery.group_by(EmailAnalysis.content_hash).having(
+            func.count(EmailAnalysis.id) > 1
+        )
         cached_count = cached_subquery.count()
 
         # Feedbacks e acurácia
@@ -103,7 +108,9 @@ def get_stats():
         approved_count = feedback_query.filter_by(approved=True).count()
         corrections_count = feedback_query.filter_by(approved=False).count()
 
-        accuracy_rate = round((approved_count / total_feedbacks) * 100, 1) if total_feedbacks > 0 else 100.0
+        accuracy_rate = (
+            round((approved_count / total_feedbacks) * 100, 1) if total_feedbacks > 0 else 100.0
+        )
 
         # ROI Corporativo
         time_saved_hours = round((total * minutes_saved) / 60.0, 1)
@@ -135,4 +142,3 @@ def get_stats():
     except Exception as e:
         logger.exception(f"Error computing stats: {e}")
         return jsonify({"error": "Failed to compute stats"}), 500
-

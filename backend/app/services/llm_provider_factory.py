@@ -5,11 +5,13 @@ Elimina duplicação entre email_routes.py e legacy/routes.py e
 serve como único ponto de decisão sobre qual provider usar.
 """
 import logging
+from typing import List
+
 from flask import current_app
 
-from backend.app.services.llm_provider import LLMProvider
-from backend.app.services.gemini_provider import GeminiProvider, MockLLMProvider
 from backend.app.services.fallback_llm_provider import FallbackLLMProvider
+from backend.app.services.gemini_provider import GeminiProvider, MockLLMProvider
+from backend.app.services.llm_provider import LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +27,10 @@ def create_llm_provider() -> LLMProvider:
     api_key = current_app.config.get("GEMINI_API_KEY", "")
     model_name = current_app.config.get("GEMINI_MODEL", "gemini-3.6-flash")
 
-    providers = []
+    providers: List[LLMProvider] = []
     if api_key:
         providers.append(GeminiProvider(api_key=api_key, model_name=model_name))
-    
+
     # Se configurado fallback ou para resiliência de desenvolvimento local
     if current_app.config.get("ENABLE_MOCK_FALLBACK", False) or not providers:
         providers.append(MockLLMProvider())

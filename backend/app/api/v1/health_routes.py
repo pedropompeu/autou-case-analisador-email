@@ -1,9 +1,10 @@
 """
 Rotas de health check e status da API.
 """
-from flask import jsonify, current_app
-from backend.app.api.v1 import api_v1_bp
+from flask import current_app, jsonify
+
 from backend.app import db
+from backend.app.api.v1 import api_v1_bp
 
 
 @api_v1_bp.route("/health", methods=["GET"])

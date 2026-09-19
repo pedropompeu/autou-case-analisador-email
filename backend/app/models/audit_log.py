@@ -2,7 +2,6 @@
 Modelo para trilha de auditoria imutável (Audit Trail).
 Essencial para compliance LGPD, GDPR e exigências regulatórias do setor financeiro.
 """
-from datetime import datetime
 from backend.app import db
 from backend.app.models.base import BaseModel
 
@@ -43,4 +42,6 @@ class AuditLog(BaseModel):
     user = db.relationship("User", backref="audit_logs")
 
     def __repr__(self):
-        return f"<AuditLog {self.id} - {self.action} by User {self.user_id} (Tenant {self.tenant_id})>"
+        return (
+            f"<AuditLog {self.id} - {self.action} by User {self.user_id} (Tenant {self.tenant_id})>"
+        )

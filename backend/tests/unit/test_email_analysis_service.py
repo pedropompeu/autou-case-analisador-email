@@ -1,7 +1,7 @@
 """
 Testes unitários para EmailAnalysisService.
 """
-import pytest
+
 from backend.app.services.email_analysis_service import EmailAnalysisService
 
 
@@ -9,9 +9,7 @@ def test_analyze_email_with_mock_provider(mock_llm_provider):
     """Testa análise de email com provider mockado."""
     service = EmailAnalysisService(llm_provider=mock_llm_provider, use_cache=False)
 
-    result = service.analyze_email(
-        "Olá, preciso de ajuda com meu projeto.", store_in_db=False
-    )
+    result = service.analyze_email("Olá, preciso de ajuda com meu projeto.", store_in_db=False)
 
     assert "error" not in result
     assert "categoria" in result

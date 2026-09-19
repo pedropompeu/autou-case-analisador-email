@@ -1,11 +1,11 @@
 """
 Testes unitários para o RoutingEngineService (#11, #17).
 """
-import pytest
+
 from backend.app import db
-from backend.app.models.tenant import Tenant
 from backend.app.models.email_analysis import EmailAnalysis
 from backend.app.models.routing_rule import RoutingRule
+from backend.app.models.tenant import Tenant
 from backend.app.services.routing_engine_service import RoutingEngineService
 
 
@@ -22,7 +22,7 @@ def test_routing_engine_triggers_quarantine_on_fraud_risk(app, db_session):
             condition_operator="gte",
             condition_value="0.5",
             action_type="set_quarantine",
-            priority=10
+            priority=10,
         )
         db.session.add(rule)
         db.session.commit()
@@ -35,7 +35,7 @@ def test_routing_engine_triggers_quarantine_on_fraud_risk(app, db_session):
             suggested_response="Nenhuma ação",
             fraud_risk_score=0.85,
             in_quarantine=False,
-            tenant_id=tenant.id
+            tenant_id=tenant.id,
         )
         db.session.add(analysis)
         db.session.commit()
@@ -61,7 +61,7 @@ def test_routing_engine_triggers_urgency_escalation(app, db_session):
             condition_value="Irritado",
             action_type="set_urgency",
             action_payload={"urgency": "Critica"},
-            priority=5
+            priority=5,
         )
         db.session.add(rule)
         db.session.commit()
@@ -74,7 +74,7 @@ def test_routing_engine_triggers_urgency_escalation(app, db_session):
             suggested_response="Pedimos desculpas",
             sentiment="Irritado",
             urgency="Media",
-            tenant_id=tenant.id
+            tenant_id=tenant.id,
         )
         db.session.add(analysis)
         db.session.commit()

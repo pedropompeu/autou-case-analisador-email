@@ -1,8 +1,8 @@
 """
 Testes unitários para o FallbackLLMProvider.
 """
-from backend.app.services.llm_provider import LLMProvider, LLMResponse
 from backend.app.services.fallback_llm_provider import FallbackLLMProvider
+from backend.app.services.llm_provider import LLMProvider, LLMResponse
 
 
 class FailingLLMProvider(LLMProvider):
@@ -23,7 +23,7 @@ class FailingLLMProvider(LLMProvider):
 
 
 class WorkingLLMProvider(LLMProvider):
-    def __init__(self, name="working-llm", content="{\"categoria\": \"Produtivo\"}"):
+    def __init__(self, name="working-llm", content='{"categoria": "Produtivo"}'):
         self.model_name = name
         self.content = content
 
@@ -41,14 +41,14 @@ class WorkingLLMProvider(LLMProvider):
 
 def test_fallback_switches_to_secondary_on_primary_failure():
     primary = FailingLLMProvider("gemini-failing")
-    secondary = WorkingLLMProvider("claude-backup", content="{\"status\": \"ok\"}")
+    secondary = WorkingLLMProvider("claude-backup", content='{"status": "ok"}')
 
     provider = FallbackLLMProvider([primary, secondary])
     response = provider.generate("teste prompt")
 
     assert response.success is True
     assert response.model_used == "claude-backup"
-    assert response.content == "{\"status\": \"ok\"}"
+    assert response.content == '{"status": "ok"}'
 
 
 def test_fallback_fails_if_all_providers_fail():

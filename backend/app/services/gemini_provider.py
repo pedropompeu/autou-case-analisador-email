@@ -7,7 +7,6 @@ import json
 import logging
 import random
 import time
-from typing import Optional
 
 from google import genai
 from google.genai import types
@@ -98,7 +97,7 @@ class GeminiProvider(LLMProvider):
                 )
 
                 return LLMResponse(
-                    content=response.text,
+                    content=response.text or "",
                     model_used=self.model_name,
                     processing_time_ms=processing_time,
                     success=True,
@@ -128,9 +127,7 @@ class GeminiProvider(LLMProvider):
                     delay *= 2.5  # Exponential backoff
                 else:
                     if is_retryable:
-                        logger.error(
-                            f"Max retries reached after transient API errors: {e}"
-                        )
+                        logger.error(f"Max retries reached after transient API errors: {e}")
                         error_msg = "API is currently experiencing high demand. Please try again in a few moments."
                     else:
                         logger.exception(f"Unexpected error calling Gemini API: {e}")

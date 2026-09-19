@@ -6,7 +6,7 @@ from backend.app.services.webhook_service import WebhookService
 
 def test_webhook_hmac_signature_generation():
     secret = "whsec_test_secret_key_12345"
-    payload = "{\"event\": \"email.analyzed\", \"data\": {\"id\": 1}}"
+    payload = '{"event": "email.analyzed", "data": {"id": 1}}'
     timestamp = 1789834000
 
     sig = WebhookService.generate_signature(secret, payload, timestamp)

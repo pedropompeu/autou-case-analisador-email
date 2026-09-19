@@ -1,7 +1,6 @@
 """
 Testes de integração para endpoints da API.
 """
-import pytest
 import json
 
 

@@ -13,14 +13,14 @@ Incorpora:
 import hashlib
 import json
 import logging
-from typing import Dict, Optional, List, Any
+from typing import Any, Dict, List, Optional
 
-from backend.app.services.llm_provider import LLMProvider
-from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.models.category import CustomCategory
-from backend.app.utils.pii_sanitizer import sanitize_pii
-from backend.app.utils.dlp_filter import inspect_and_filter_dlp
+from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.services.audit_service import AuditService
+from backend.app.services.llm_provider import LLMProvider
+from backend.app.utils.dlp_filter import inspect_and_filter_dlp
+from backend.app.utils.pii_sanitizer import sanitize_pii
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +196,7 @@ class EmailAnalysisService:
         if created_analysis:
             try:
                 from backend.app.services.routing_engine_service import RoutingEngineService
+
                 RoutingEngineService.evaluate_and_apply(created_analysis)
             except Exception as e:
                 logger.error(f"Failed to evaluate routing rules: {e}")
@@ -288,6 +289,7 @@ Retorne exclusivamente um objeto JSON no formato:
         analysis.suggested_response = new_text
         analysis.tone_used = new_tone
         from backend.app import db
+
         db.session.commit()
 
         AuditService.log(
@@ -317,7 +319,7 @@ Retorne exclusivamente um objeto JSON no formato:
         tone: str,
     ) -> str:
         cats_str = ", ".join(custom_categories) if custom_categories else "Produtivo, Improdutivo"
-        
+
         history_context = ""
         if thread_history:
             history_context = "\nHistórico anterior desta mesma conversa (para contexto):\n"

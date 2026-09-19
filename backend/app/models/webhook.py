@@ -3,6 +3,7 @@ Modelos para Webhooks de Saída (Outbound Webhooks) no SaaS B2B.
 Permite aos clientes receberem eventos em tempo real em seus próprios sistemas (ERP, CRM, Slack, etc.).
 """
 import secrets
+
 from backend.app import db
 from backend.app.models.base import BaseModel
 
@@ -20,13 +21,17 @@ class WebhookSubscription(BaseModel):
     )
     url = db.Column(db.String(500), nullable=False)
     secret = db.Column(db.String(128), nullable=False)  # Usado para assinatura HMAC-SHA256
-    events = db.Column(db.JSON, nullable=False, default=list)  # Ex: ["email.analyzed", "quarantine.flagged"]
+    events = db.Column(
+        db.JSON, nullable=False, default=list
+    )  # Ex: ["email.analyzed", "quarantine.flagged"]
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     description = db.Column(db.String(255), nullable=True)
 
     # Relacionamentos
     tenant = db.relationship("Tenant", backref=db.backref("webhooks", lazy="dynamic"))
-    deliveries = db.relationship("WebhookDelivery", backref="subscription", lazy="dynamic", cascade="all, delete-orphan")
+    deliveries = db.relationship(
+        "WebhookDelivery", backref="subscription", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     @classmethod
     def generate_secret(cls) -> str:

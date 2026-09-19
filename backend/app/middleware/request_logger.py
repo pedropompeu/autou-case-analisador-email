@@ -26,9 +26,8 @@ class RequestLoggerMiddleware:
         start_time = time.time()
         path = environ.get("PATH_INFO", "")
         method = environ.get("REQUEST_METHOD", "")
-        remote_addr = (
-            environ.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-            or environ.get("REMOTE_ADDR", "")
+        remote_addr = environ.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or environ.get(
+            "REMOTE_ADDR", ""
         )
 
         def custom_start_response(status, headers, exc_info=None):

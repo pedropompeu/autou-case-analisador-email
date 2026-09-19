@@ -3,16 +3,18 @@ Rotas de Ingestão de Canais e API Pública B2B (#23, #27).
 Suporta ingestão direta de arquivos RFC822 / .eml e webhooks de caixas postais.
 """
 import logging
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from backend.app.utils.email_parser import parse_eml
-from backend.app.utils.tenant_context import get_current_tenant_id
-from backend.app.utils.rbac import get_current_user
+
+from backend.app import limiter
+from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.services.email_analysis_service import EmailAnalysisService
 from backend.app.services.llm_provider_factory import create_llm_provider
-from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.services.webhook_service import WebhookService
-from backend.app import limiter
+from backend.app.utils.email_parser import parse_eml
+from backend.app.utils.rbac import get_current_user
+from backend.app.utils.tenant_context import get_current_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,10 @@ def ingest_eml():
     """
     tenant_id = get_current_tenant_id()
     if tenant_id is None:
-        return jsonify({"error": "Authentication required via JWT Bearer token or X-API-Key header"}), 401
+        return (
+            jsonify({"error": "Authentication required via JWT Bearer token or X-API-Key header"}),
+            401,
+        )
 
     user = get_current_user()
     user_id = user.id if user else None
@@ -60,7 +65,7 @@ def ingest_eml():
     # 3. Analisar com o motor de IA
     tone = request.args.get("tone", "formal")
     service = _get_analysis_service()
-    
+
     result = service.analyze_email(
         email_content=parsed_email["full_text"],
         store_in_db=True,
@@ -96,14 +101,19 @@ def ingest_eml():
     except Exception as e:
         logger.error(f"Error dispatching webhooks after EML ingestion: {e}")
 
-    return jsonify({
-        "message": "Email ingested and analyzed successfully",
-        "email_metadata": {
-            "subject": parsed_email["subject"],
-            "from": parsed_email["from"],
-            "to": parsed_email["to"],
-            "date": parsed_email["date"],
-            "attachments": parsed_email["attachments"],
-        },
-        "analysis": result,
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": "Email ingested and analyzed successfully",
+                "email_metadata": {
+                    "subject": parsed_email["subject"],
+                    "from": parsed_email["from"],
+                    "to": parsed_email["to"],
+                    "date": parsed_email["date"],
+                    "attachments": parsed_email["attachments"],
+                },
+                "analysis": result,
+            }
+        ),
+        200,
+    )

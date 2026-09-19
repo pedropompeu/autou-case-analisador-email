@@ -5,12 +5,13 @@ Nota: estas rotas são mantidas apenas para o frontend legado servido pelo
 Flask. Novos clientes devem usar a API versionada em /api/v1/.
 """
 import logging
-from flask import render_template, request, jsonify, current_app
+
+from flask import jsonify, render_template, request
 
 from backend.app.api.legacy import legacy_bp
+from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.services.email_analysis_service import EmailAnalysisService
 from backend.app.services.llm_provider_factory import create_llm_provider
-from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.utils.file_processor import FileProcessor
 
 logger = logging.getLogger(__name__)
@@ -38,11 +39,7 @@ def processar_email():
             attachment_text = FileProcessor.process_file(file, file.filename)
             if attachment_text is None:
                 return (
-                    jsonify(
-                        {
-                            "error": "Formato de ficheiro não suportado. Use .txt ou .pdf."
-                        }
-                    ),
+                    jsonify({"error": "Formato de ficheiro não suportado. Use .txt ou .pdf."}),
                     400,
                 )
         except Exception as e:

@@ -4,9 +4,10 @@ Criptografa payloads de emails no banco de dados usando Fernet (AES-128-CBC + HM
 """
 import base64
 import hashlib
-import os
 import logging
+import os
 from typing import Optional
+
 from cryptography.fernet import Fernet, InvalidToken
 
 logger = logging.getLogger(__name__)

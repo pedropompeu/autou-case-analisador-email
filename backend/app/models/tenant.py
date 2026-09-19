@@ -2,6 +2,7 @@
 Modelo de Tenant para isolamento lógico multi-tenant no SaaS B2B.
 """
 import secrets
+
 from backend.app import db
 from backend.app.models.base import BaseModel
 
@@ -15,7 +16,7 @@ class Tenant(BaseModel):
     slug = db.Column(db.String(80), unique=True, nullable=False, index=True)
     plan = db.Column(db.String(50), nullable=False, default="starter")  # starter, pro, enterprise
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    
+
     # API Key para integrações B2B diretas (Microsoft Graph, Gmail, ERP)
     api_key = db.Column(db.String(128), unique=True, nullable=True, index=True)
 

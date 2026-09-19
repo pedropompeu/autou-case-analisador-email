@@ -2,15 +2,16 @@
 Rotas administrativas e de auditoria para compliance e gestão de tenants (RBAC: Admin / Auditor).
 """
 import logging
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+
 from backend.app import db
 from backend.app.models.audit_log import AuditLog
 from backend.app.models.user import User
-from backend.app.models.tenant import Tenant
-from backend.app.utils.rbac import roles_required, get_current_user
-from backend.app.utils.tenant_context import get_current_tenant_id
 from backend.app.services.audit_service import AuditService
+from backend.app.utils.rbac import get_current_user, roles_required
+from backend.app.utils.tenant_context import get_current_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -44,24 +45,31 @@ def list_audit_logs():
 
     logs = []
     for entry in pagination.items:
-        logs.append({
-            "id": entry.id,
-            "action": entry.action,
-            "resource_type": entry.resource_type,
-            "resource_id": entry.resource_id,
-            "user_id": entry.user_id,
-            "ip_address": entry.ip_address,
-            "details": entry.details,
-            "created_at": entry.created_at.isoformat(),
-        })
+        logs.append(
+            {
+                "id": entry.id,
+                "action": entry.action,
+                "resource_type": entry.resource_type,
+                "resource_id": entry.resource_id,
+                "user_id": entry.user_id,
+                "ip_address": entry.ip_address,
+                "details": entry.details,
+                "created_at": entry.created_at.isoformat(),
+            }
+        )
 
-    return jsonify({
-        "items": logs,
-        "total": pagination.total,
-        "page": pagination.page,
-        "pages": pagination.pages,
-        "per_page": pagination.per_page,
-    }), 200
+    return (
+        jsonify(
+            {
+                "items": logs,
+                "total": pagination.total,
+                "page": pagination.page,
+                "pages": pagination.pages,
+                "per_page": pagination.per_page,
+            }
+        ),
+        200,
+    )
 
 
 @admin_bp.route("/users", methods=["GET"])
@@ -74,20 +82,25 @@ def list_tenant_users():
         return jsonify({"error": "No tenant associated"}), 400
 
     users = User.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
-    return jsonify({
-        "users": [
+    return (
+        jsonify(
             {
-                "id": u.id,
-                "username": u.username,
-                "email": u.email,
-                "role": u.role,
-                "is_active": u.is_active,
-                "last_login": u.last_login.isoformat() if u.last_login else None,
-                "created_at": u.created_at.isoformat(),
+                "users": [
+                    {
+                        "id": u.id,
+                        "username": u.username,
+                        "email": u.email,
+                        "role": u.role,
+                        "is_active": u.is_active,
+                        "last_login": u.last_login.isoformat() if u.last_login else None,
+                        "created_at": u.created_at.isoformat(),
+                    }
+                    for u in users
+                ]
             }
-            for u in users
-        ]
-    }), 200
+        ),
+        200,
+    )
 
 
 @admin_bp.route("/users/<int:user_id>/role", methods=["PATCH"])
@@ -105,7 +118,12 @@ def update_user_role(user_id):
     data = request.get_json() or {}
     new_role = data.get("role")
     if new_role not in ["admin", "operator", "viewer", "auditor"]:
-        return jsonify({"error": "Invalid role", "allowed": ["admin", "operator", "viewer", "auditor"]}), 400
+        return (
+            jsonify(
+                {"error": "Invalid role", "allowed": ["admin", "operator", "viewer", "auditor"]}
+            ),
+            400,
+        )
 
     old_role = user.role
     user.role = new_role
@@ -120,9 +138,16 @@ def update_user_role(user_id):
         tenant_id=tenant_id,
     )
 
-    logger.info(f"User {user.username} role changed from {old_role} to {new_role} by {current_admin.username if current_admin else 'admin'}")
-    return jsonify({
-        "message": "Role updated successfully",
-        "user_id": user.id,
-        "new_role": user.role,
-    }), 200
+    logger.info(
+        f"User {user.username} role changed from {old_role} to {new_role} by {current_admin.username if current_admin else 'admin'}"
+    )
+    return (
+        jsonify(
+            {
+                "message": "Role updated successfully",
+                "user_id": user.id,
+                "new_role": user.role,
+            }
+        ),
+        200,
+    )

@@ -4,12 +4,14 @@ Registra ações de segurança, compliance e operações de negócio.
 """
 import json
 import logging
-from typing import Optional, Dict, Any
-from flask import request, has_request_context
+from typing import Any, Dict, Optional
+
+from flask import has_request_context, request
+
 from backend.app import db
 from backend.app.models.audit_log import AuditLog
-from backend.app.utils.tenant_context import get_current_tenant_id
 from backend.app.utils.rbac import get_current_user
+from backend.app.utils.tenant_context import get_current_tenant_id
 
 logger = logging.getLogger("audit")
 
@@ -28,7 +30,7 @@ class AuditService:
     ) -> Optional[AuditLog]:
         """
         Registra um evento de auditoria no banco e no logger estruturado.
-        
+
         Args:
             action: Nome da ação (ex: 'auth.login', 'email.analyze', 'user.role_change')
             resource_type: Tipo do recurso envolvido ('EmailAnalysis', 'User', etc.)
@@ -74,16 +76,18 @@ class AuditService:
 
         # Emitir log estruturado JSON
         logger.info(
-            json.dumps({
-                "event": "audit_event",
-                "action": action,
-                "tenant_id": tenant_id,
-                "user_id": user_id,
-                "resource_type": resource_type,
-                "resource_id": resource_id,
-                "ip": ip_address,
-                "details": details or {},
-            })
+            json.dumps(
+                {
+                    "event": "audit_event",
+                    "action": action,
+                    "tenant_id": tenant_id,
+                    "user_id": user_id,
+                    "resource_type": resource_type,
+                    "resource_id": resource_id,
+                    "ip": ip_address,
+                    "details": details or {},
+                }
+            )
         )
 
         return audit_entry

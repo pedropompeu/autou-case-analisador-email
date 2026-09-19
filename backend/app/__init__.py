@@ -3,21 +3,23 @@ Application Factory Pattern para Flask.
 """
 import json
 import logging
+import os
 import sys
 import time
-import os
+from typing import Optional
+
 from flask import Flask, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
-from flask_jwt_extended import JWTManager
 from prometheus_flask_exporter import PrometheusMetrics
 
-from backend.config import get_config
 from backend.app.celery_app import celery_init_app
+from backend.config import get_config
 
 # Extensões globais (inicializadas no create_app)
 db = SQLAlchemy()
@@ -27,7 +29,7 @@ metrics = PrometheusMetrics.for_app_factory()
 jwt = JWTManager()
 
 
-def create_app(config_name: str = None) -> Flask:
+def create_app(config_name: Optional[str] = None) -> Flask:
     """
     Factory para criar e configurar a aplicação Flask.
 
@@ -41,7 +43,7 @@ def create_app(config_name: str = None) -> Flask:
     # Configurar caminhos de templates/static
     template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../templates"))
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../static"))
-    
+
     app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
     # Carregar configuração
@@ -79,12 +81,8 @@ def create_app(config_name: str = None) -> Flask:
         Talisman(
             app,
             force_https=app.config.get("TALISMAN_FORCE_HTTPS", False),
-            strict_transport_security=app.config.get(
-                "TALISMAN_STRICT_TRANSPORT_SECURITY", True
-            ),
-            content_security_policy=app.config.get(
-                "TALISMAN_CONTENT_SECURITY_POLICY"
-            ),
+            strict_transport_security=app.config.get("TALISMAN_STRICT_TRANSPORT_SECURITY", True),
+            content_security_policy=app.config.get("TALISMAN_CONTENT_SECURITY_POLICY"),
         )
 
     # Registrar middlewares customizados
@@ -121,6 +119,7 @@ def create_app(config_name: str = None) -> Flask:
 
 
 # ── Logging ──────────────────────────────────────────────────────────────────
+
 
 class _JsonFormatter(logging.Formatter):
     """Formata cada log como uma linha JSON — compatível com Loki/ELK/CloudWatch."""
@@ -159,17 +158,18 @@ def setup_logging(app: Flask) -> None:
 
 # ── Registro de componentes ──────────────────────────────────────────────────
 
+
 def register_middlewares(app: Flask) -> None:
     """Registra middlewares customizados."""
     from backend.app.middleware.request_logger import RequestLoggerMiddleware
 
-    app.wsgi_app = RequestLoggerMiddleware(app.wsgi_app, app.logger)
+    app.wsgi_app = RequestLoggerMiddleware(app.wsgi_app, app.logger)  # type: ignore[method-assign]
 
 
 def register_blueprints(app: Flask) -> None:
     """Registra blueprints da API."""
-    from backend.app.api.v1 import api_v1_bp
     from backend.app.api.legacy import legacy_bp
+    from backend.app.api.v1 import api_v1_bp
 
     # API v1 (estrutura enterprise)
     app.register_blueprint(api_v1_bp, url_prefix="/api/v1")
@@ -194,31 +194,32 @@ def register_error_handlers(app: Flask) -> None:
 
     @jwt.revoked_token_loader
     def revoked_token_callback(jwt_header, jwt_payload):
-        return jsonify({
-            "error": "token_revoked",
-            "message": "This token has been revoked / logged out"
-        }), 401
+        return (
+            jsonify(
+                {"error": "token_revoked", "message": "This token has been revoked / logged out"}
+            ),
+            401,
+        )
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
-        return jsonify({
-            "error": "token_expired",
-            "message": "The token has expired"
-        }), 401
+        return jsonify({"error": "token_expired", "message": "The token has expired"}), 401
 
     @jwt.invalid_token_loader
     def invalid_token_callback(error):
-        return jsonify({
-            "error": "invalid_token",
-            "message": "Signature verification failed"
-        }), 401
+        return jsonify({"error": "invalid_token", "message": "Signature verification failed"}), 401
 
     @jwt.unauthorized_loader
     def missing_token_callback(error):
-        return jsonify({
-            "error": "authorization_required",
-            "message": "Request does not contain an access token"
-        }), 401
+        return (
+            jsonify(
+                {
+                    "error": "authorization_required",
+                    "message": "Request does not contain an access token",
+                }
+            ),
+            401,
+        )
 
     @app.errorhandler(400)
     def bad_request(error):
@@ -255,9 +256,7 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(Exception)
     def handle_exception(error):
-        app.logger.exception(
-            json.dumps({"event": "unhandled_exception", "detail": str(error)})
-        )
+        app.logger.exception(json.dumps({"event": "unhandled_exception", "detail": str(error)}))
         return (
             jsonify(
                 {

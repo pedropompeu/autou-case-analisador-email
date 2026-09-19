@@ -7,7 +7,7 @@ instâncias de aplicação criadas durante testes.
 """
 import json
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
 
 import redis
 from flask import current_app
@@ -70,7 +70,7 @@ def cache_get(key: str) -> Optional[Any]:
     try:
         value = client.get(key)
         if value:
-            return json.loads(value)
+            return json.loads(str(value))
     except Exception as e:
         logger.error(f"Cache get error for key '{key}': {e}")
 

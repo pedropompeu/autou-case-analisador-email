@@ -1,16 +1,16 @@
 """
 Testes unitários para o módulo de criptografia at-rest.
 """
-from backend.app.utils.crypto import encrypt_text, decrypt_text
+from backend.app.utils.crypto import decrypt_text, encrypt_text
 
 
 def test_encryption_and_decryption_cycle():
     secret_text = "Texto confidencial de email corporativo bancário."
     encrypted = encrypt_text(secret_text)
-    
+
     assert encrypted != secret_text
     assert encrypted.startswith("enc::")
-    
+
     decrypted = decrypt_text(encrypted)
     assert decrypted == secret_text
 

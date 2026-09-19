@@ -1,8 +1,8 @@
 """
 Testes unitários para o Outbound DLP Filter (Data Loss Prevention).
 """
-import pytest
-from backend.app.utils.dlp_filter import sanitize_outbound_response, check_dlp_violations
+
+from backend.app.utils.dlp_filter import check_dlp_violations, sanitize_outbound_response
 
 
 def test_dlp_filter_api_key_detection():

@@ -3,8 +3,8 @@ Interface abstrata para provedores de LLM (agnóstico).
 Permite trocar facilmente entre Gemini, OpenAI, Claude, etc.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -20,6 +20,8 @@ class LLMResponse:
 
 class LLMProvider(ABC):
     """Interface abstrata para provedores de LLM."""
+
+    model_name: str = "llm"
 
     @abstractmethod
     def generate(self, prompt: str, **kwargs) -> LLMResponse:

@@ -1,19 +1,15 @@
 import logging
 from datetime import datetime
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import (
-    create_access_token,
-    jwt_required,
-    get_jwt_identity,
-    get_jwt,
-)
-from marshmallow import Schema, fields, validate, ValidationError, EXCLUDE
 
-from backend.app.models.user import User
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, jwt_required
+from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate
+
+from backend.app import db
 from backend.app.models.tenant import Tenant
+from backend.app.models.user import User
 from backend.app.services.audit_service import AuditService
 from backend.app.utils.jwt_blocklist import add_token_to_blocklist
-from backend.app import db
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +63,7 @@ def register():
     # Criação ou associação de Tenant
     org_name = data.get("organization_name") or f"Org {data['username']}"
     slug = org_name.lower().replace(" ", "-").replace(".", "")[:80]
-    
+
     tenant = Tenant.query.filter_by(slug=slug).first()
     if not tenant:
         tenant = Tenant(
@@ -106,17 +102,24 @@ def register():
         tenant_id=tenant.id,
     )
 
-    logger.info(f"New user registered: {new_user.username} (Role: {new_user.role}, Tenant: {tenant.slug})")
-    return jsonify({
-        "message": "User created successfully",
-        "user": {
-            "id": new_user.id,
-            "username": new_user.username,
-            "role": new_user.role,
-            "tenant_id": tenant.id,
-            "tenant_slug": tenant.slug,
-        }
-    }), 201
+    logger.info(
+        f"New user registered: {new_user.username} (Role: {new_user.role}, Tenant: {tenant.slug})"
+    )
+    return (
+        jsonify(
+            {
+                "message": "User created successfully",
+                "user": {
+                    "id": new_user.id,
+                    "username": new_user.username,
+                    "role": new_user.role,
+                    "tenant_id": tenant.id,
+                    "tenant_slug": tenant.slug,
+                },
+            }
+        ),
+        201,
+    )
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -164,12 +167,17 @@ def login():
     )
 
     logger.info(f"User logged in: {user.username} (Role: {user.role})")
-    return jsonify({
-        "access_token": access_token,
-        "username": user.username,
-        "role": user.role,
-        "tenant_id": user.tenant_id,
-    }), 200
+    return (
+        jsonify(
+            {
+                "access_token": access_token,
+                "username": user.username,
+                "role": user.role,
+                "tenant_id": user.tenant_id,
+            }
+        ),
+        200,
+    )
 
 
 @auth_bp.route("/logout", methods=["POST"])
@@ -217,14 +225,18 @@ def me():
             "settings": user.tenant_rel.settings,
         }
 
-    return jsonify({
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "role": user.role,
-        "tenant_id": user.tenant_id,
-        "tenant": tenant_data,
-        "last_login": user.last_login.isoformat() if user.last_login else None,
-        "created_at": user.created_at.isoformat(),
-    }), 200
-
+    return (
+        jsonify(
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "tenant_id": user.tenant_id,
+                "tenant": tenant_data,
+                "last_login": user.last_login.isoformat() if user.last_login else None,
+                "created_at": user.created_at.isoformat(),
+            }
+        ),
+        200,
+    )

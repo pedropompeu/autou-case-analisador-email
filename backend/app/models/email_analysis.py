@@ -44,7 +44,7 @@ class EmailAnalysis(BaseModel):
     urgency = db.Column(db.String(20), nullable=True)  # Baixa, Media, Alta, Critica
     confidence_score = db.Column(db.Float, nullable=True)  # 0.0 a 1.0
     in_quarantine = db.Column(db.Boolean, nullable=False, default=False)  # Quarentena humana
-    
+
     # Detecção de Fraude e Phishing (#6)
     fraud_risk_score = db.Column(db.Float, nullable=True)  # 0.0 a 1.0
     fraud_flags = db.Column(db.JSON, nullable=True)  # Lista de indícios semânticos
@@ -61,7 +61,9 @@ class EmailAnalysis(BaseModel):
     model_used = db.Column(db.String(100), nullable=True)
 
     # Workflow e Atribuição de Equipe (#41, #44)
-    status = db.Column(db.String(30), nullable=False, default="pending")  # pending, in_progress, resolved, escalated
+    status = db.Column(
+        db.String(30), nullable=False, default="pending"
+    )  # pending, in_progress, resolved, escalated
     assigned_to_user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", ondelete="SET NULL"),
@@ -71,8 +73,9 @@ class EmailAnalysis(BaseModel):
 
     # Relacionamentos
     user = db.relationship("User", foreign_keys=[user_id], backref="created_analyses")
-    assigned_user = db.relationship("User", foreign_keys=[assigned_to_user_id], backref="assigned_analyses")
+    assigned_user = db.relationship(
+        "User", foreign_keys=[assigned_to_user_id], backref="assigned_analyses"
+    )
 
     def __repr__(self):
         return f"<EmailAnalysis {self.id} - {self.category} ({self.status})>"
-

@@ -1,7 +1,7 @@
 """
 Schemas de validação usando Marshmallow.
 """
-from marshmallow import Schema, fields, validate, ValidationError
+from marshmallow import Schema, fields, validate
 
 
 class EmailAnalysisRequestSchema(Schema):
@@ -100,4 +100,3 @@ class StatsResponseSchema(Schema):
     total_feedbacks = fields.Int(required=True)
     corrections_count = fields.Int(required=True)
     time_saved_estimate_hours = fields.Float(required=True)
-

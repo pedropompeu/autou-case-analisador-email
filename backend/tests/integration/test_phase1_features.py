@@ -7,9 +7,6 @@ Testes de integração para as funcionalidades de IA da Fase 1:
 - Categorias Dinâmicas por Tenant (#16)
 - Memória de Thread (#7)
 """
-import json
-from backend.app.models.email_analysis import EmailAnalysis
-from backend.app.models.category import CustomCategory
 
 
 def test_advanced_email_analysis_fields(client, auth_headers):

@@ -3,20 +3,21 @@ Rotas da API v1 para análise de emails.
 """
 import io
 import logging
-from flask import request, jsonify
+
+import pypdf
+from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 from marshmallow import ValidationError
-import pypdf
 
+from backend.app import limiter
 from backend.app.api.v1 import api_v1_bp
 from backend.app.api.v1.schemas import EmailAnalysisRequestSchema
+from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.services.email_analysis_service import EmailAnalysisService
 from backend.app.services.llm_provider_factory import create_llm_provider
-from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
 from backend.app.tasks import analyze_email_background
-from backend.app.utils.tenant_context import get_current_tenant_id
 from backend.app.utils.rbac import get_current_user
-from backend.app import limiter
+from backend.app.utils.tenant_context import get_current_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -110,11 +111,16 @@ def analyze_email():
         task = analyze_email_background.delay(
             email_text, store_in_db=store_in_db, tenant_id=tenant_id, user_id=user_id
         )
-        return jsonify({
-            "task_id": task.id,
-            "status": "ACCEPTED",
-            "message": "Analysis started in background"
-        }), 202
+        return (
+            jsonify(
+                {
+                    "task_id": task.id,
+                    "status": "ACCEPTED",
+                    "message": "Analysis started in background",
+                }
+            ),
+            202,
+        )
 
     service = _get_analysis_service()
     result = service.analyze_email(
@@ -162,8 +168,9 @@ def manage_categories():
     GET: Lista as categorias customizadas do tenant ativo (#16).
     POST: Cria uma nova categoria dinâmica (Requer role Admin ou Operator).
     """
-    from backend.app.models.category import CustomCategory
     from backend.app import db
+    from backend.app.models.category import CustomCategory
+
     tenant_id = get_current_tenant_id()
     if tenant_id is None:
         return jsonify({"error": "No tenant context found"}), 400
@@ -186,24 +193,38 @@ def manage_categories():
         )
         db.session.add(cat)
         db.session.commit()
-        return jsonify({
-            "message": "Category created successfully",
-            "category": {"id": cat.id, "name": cat.name, "action_required": cat.action_required}
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Category created successfully",
+                    "category": {
+                        "id": cat.id,
+                        "name": cat.name,
+                        "action_required": cat.action_required,
+                    },
+                }
+            ),
+            201,
+        )
 
     # GET
     categories = CustomCategory.query.filter_by(tenant_id=tenant_id, is_active=True).all()
-    return jsonify({
-        "categories": [
+    return (
+        jsonify(
             {
-                "id": c.id,
-                "name": c.name,
-                "description": c.description,
-                "action_required": c.action_required,
+                "categories": [
+                    {
+                        "id": c.id,
+                        "name": c.name,
+                        "description": c.description,
+                        "action_required": c.action_required,
+                    }
+                    for c in categories
+                ]
             }
-            for c in categories
-        ]
-    }), 200
+        ),
+        200,
+    )
 
 
 @api_v1_bp.route("/tasks/<task_id>", methods=["GET"])
@@ -213,7 +234,7 @@ def get_task_status(task_id):
     Consulta o status de uma tarefa assíncrona.
     """
     from celery.result import AsyncResult
-    
+
     result = AsyncResult(task_id)
     response = {
         "task_id": task_id,
@@ -274,14 +295,10 @@ def analyze_email_with_file():
                 attachment_text = file.read().decode("utf-8")
             elif filename.endswith(".pdf"):
                 pdf_reader = pypdf.PdfReader(io.BytesIO(file.read()))
-                attachment_text = "".join(
-                    page.extract_text() or "" for page in pdf_reader.pages
-                )
+                attachment_text = "".join(page.extract_text() or "" for page in pdf_reader.pages)
             else:
                 return (
-                    jsonify(
-                        {"error": "Unsupported file format. Use .txt or .pdf files only."}
-                    ),
+                    jsonify({"error": "Unsupported file format. Use .txt or .pdf files only."}),
                     400,
                 )
         except Exception as e:

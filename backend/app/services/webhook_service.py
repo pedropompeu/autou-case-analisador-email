@@ -1,17 +1,17 @@
 """
 Serviço para Despacho e Assinatura Criptográfica de Webhooks de Saída (#26).
 """
-import hmac
 import hashlib
-import time
+import hmac
 import json
 import logging
-from typing import Optional, Dict, Any
-import urllib.request
+import time
 import urllib.error
+import urllib.request
+from typing import Any, Dict, Optional
 
 from backend.app import db
-from backend.app.models.webhook import WebhookSubscription, WebhookDelivery
+from backend.app.models.webhook import WebhookDelivery, WebhookSubscription
 
 logger = logging.getLogger("webhooks")
 

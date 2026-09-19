@@ -2,10 +2,11 @@
 Repository Pattern para EmailAnalysis.
 Isola a lógica de acesso a dados do resto da aplicação com suporte a multi-tenancy e criptografia at-rest.
 """
-from typing import Optional, List
+from typing import List, Optional
+
 from backend.app import db
 from backend.app.models.email_analysis import EmailAnalysis
-from backend.app.utils.crypto import encrypt_text, decrypt_text
+from backend.app.utils.crypto import decrypt_text, encrypt_text
 
 
 class EmailAnalysisRepository:
@@ -84,7 +85,7 @@ class EmailAnalysisRepository:
         query = EmailAnalysis.query.filter_by(content_hash=content_hash, is_deleted=False)
         if tenant_id is not None:
             query = query.filter_by(tenant_id=tenant_id)
-        
+
         analysis = query.first()
         if analysis and analysis.email_content:
             analysis.email_content = decrypt_text(analysis.email_content)
@@ -109,11 +110,7 @@ class EmailAnalysisRepository:
         if tenant_id is not None:
             query = query.filter_by(tenant_id=tenant_id)
 
-        analyses = (
-            query.order_by(EmailAnalysis.created_at.desc())
-            .limit(limit)
-            .all()
-        )
+        analyses = query.order_by(EmailAnalysis.created_at.desc()).limit(limit).all()
         for item in analyses:
             if item.email_content:
                 item.email_content = decrypt_text(item.email_content)
@@ -127,4 +124,3 @@ class EmailAnalysisRepository:
             analysis.soft_delete()
             return True
         return False
-

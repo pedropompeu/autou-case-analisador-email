@@ -4,7 +4,8 @@ Garante alta disponibilidade alternando automaticamente entre provedores (ex: Ge
 em caso de sobrecarga, rate limits rígidos ou quedas transitórias de rede.
 """
 import logging
-from typing import List, Optional
+from typing import List
+
 from backend.app.services.llm_provider import LLMProvider, LLMResponse
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,9 @@ class FallbackLLMProvider(LLMProvider):
 
         for idx, provider in enumerate(self.providers):
             try:
-                logger.info(f"Attempting generation with provider #{idx + 1}: {provider.model_name}")
+                logger.info(
+                    f"Attempting generation with provider #{idx + 1}: {provider.model_name}"
+                )
                 response = provider.generate(prompt, **kwargs)
                 if response.success:
                     if idx > 0:
@@ -39,9 +42,11 @@ class FallbackLLMProvider(LLMProvider):
                             f"Failover successful! Primary provider failed, fulfilled by #{idx + 1} ({provider.model_name})."
                         )
                     return response
-                
+
                 last_error = response.error_message
-                logger.warning(f"Provider {provider.model_name} failed: {response.error_message}. Trying next...")
+                logger.warning(
+                    f"Provider {provider.model_name} failed: {response.error_message}. Trying next..."
+                )
 
             except Exception as e:
                 last_error = str(e)

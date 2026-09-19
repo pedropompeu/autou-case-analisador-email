@@ -4,6 +4,7 @@ Utilitários para processamento de arquivos.
 import io
 import logging
 from typing import Optional
+
 import pypdf
 
 logger = logging.getLogger(__name__)

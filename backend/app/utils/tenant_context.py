@@ -3,8 +3,10 @@ Gerenciamento de contexto do Tenant ativo na requisição.
 Garante isolamento lógico multi-tenant em toda a camada de aplicação.
 """
 from typing import Optional
+
 from flask import g, request
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
+
 from backend.app.models.tenant import Tenant
 from backend.app.models.user import User
 
@@ -12,7 +14,7 @@ from backend.app.models.user import User
 def get_current_tenant_id() -> Optional[int]:
     """
     Recupera o tenant_id ativo na requisição atual.
-    
+
     Ordem de resolução:
     1. Header X-API-Key (para integrações de máquina/API)
     2. Claims do JWT (para usuários web autenticados)
@@ -22,7 +24,9 @@ def get_current_tenant_id() -> Optional[int]:
     try:
         api_key = request.headers.get("X-API-Key")
         if api_key:
-            tenant = Tenant.query.filter_by(api_key=api_key, is_active=True, is_deleted=False).first()
+            tenant = Tenant.query.filter_by(
+                api_key=api_key, is_active=True, is_deleted=False
+            ).first()
             if tenant:
                 g.current_tenant_id = tenant.id
                 g.current_tenant = tenant
@@ -43,7 +47,7 @@ def get_current_tenant_id() -> Optional[int]:
         claims = get_jwt()
         if claims and "tenant_id" in claims and claims["tenant_id"] is not None:
             return int(claims["tenant_id"])
-        
+
         # Fallback: consultar usuário do JWT se tenant_id não estiver no payload
         if claims and "sub" in claims:
             username = claims["sub"]

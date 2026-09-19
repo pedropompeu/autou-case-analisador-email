@@ -3,11 +3,11 @@ Motor de Regras de Roteamento e SLA Automático (#11, #17).
 Avalia regras ativas após a análise de IA para disparar ações automáticas.
 """
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 
 from backend.app import db
-from backend.app.models.routing_rule import RoutingRule
 from backend.app.models.email_analysis import EmailAnalysis
+from backend.app.models.routing_rule import RoutingRule
 from backend.app.services.webhook_service import WebhookService
 
 logger = logging.getLogger(__name__)
@@ -27,9 +27,7 @@ class RoutingEngineService:
 
         rules = (
             RoutingRule.query.filter_by(
-                tenant_id=analysis.tenant_id,
-                is_active=True,
-                is_deleted=False
+                tenant_id=analysis.tenant_id, is_active=True, is_deleted=False
             )
             .order_by(RoutingRule.priority.asc())
             .all()
@@ -39,12 +37,14 @@ class RoutingEngineService:
         for rule in rules:
             if cls._matches_condition(analysis, rule):
                 cls._execute_action(analysis, rule)
-                triggered_rules.append({
-                    "rule_id": rule.id,
-                    "rule_name": rule.name,
-                    "action_type": rule.action_type,
-                    "payload": rule.action_payload
-                })
+                triggered_rules.append(
+                    {
+                        "rule_id": rule.id,
+                        "rule_name": rule.name,
+                        "action_type": rule.action_type,
+                        "payload": rule.action_payload,
+                    }
+                )
 
         if triggered_rules:
             db.session.commit()
@@ -128,7 +128,8 @@ class RoutingEngineService:
 
         elif action == "alert_webhook":
             event_name = payload.get("event", "analysis.sla_alert")
-            WebhookService.trigger(
+            WebhookService.dispatch_event(
+                tenant_id=analysis.tenant_id,
                 event=event_name,
                 payload={
                     "analysis_id": analysis.id,
@@ -138,5 +139,4 @@ class RoutingEngineService:
                     "sentiment": analysis.sentiment,
                     "category": analysis.category,
                 },
-                tenant_id=analysis.tenant_id
             )

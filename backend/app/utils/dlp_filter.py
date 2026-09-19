@@ -4,19 +4,25 @@ Inspeciona as respostas geradas antes da exibição ao operador para evitar
 o vazamento acidental de chaves de API, credenciais, conexões de banco de dados ou IPs internos.
 """
 import re
-from typing import Tuple, Dict, Any, List
+from typing import Any, Dict, List, Tuple
 
 # Padrões de segredos e credenciais
 _API_KEY_PATTERNS = [
-    re.compile(r"(?i)(?:api[_-]?key|secret|token|password|senha)[:=\s]+(['\"]?[A-Za-z0-9_\-\.]{16,}['\"]?)"),
+    re.compile(
+        r"(?i)(?:api[_-]?key|secret|token|password|senha)[:=\s]+(['\"]?[A-Za-z0-9_\-\.]{16,}['\"]?)"
+    ),
     re.compile(r"\b(?:sk_live|ak_live|whsec|ghp_|AIzaSy)[A-Za-z0-9_\-]{16,}\b"),
 ]
 
 # URLs de conexões internas de bancos de dados
-_DB_URL_PATTERN = re.compile(r"(?i)(?:postgresql|postgres|mysql|mongodb|redis):\/\/[^\s]+(?::[^\s]+)?@[^\s]+")
+_DB_URL_PATTERN = re.compile(
+    r"(?i)(?:postgresql|postgres|mysql|mongodb|redis):\/\/[^\s]+(?::[^\s]+)?@[^\s]+"
+)
 
 # Endereços IPv4 privados internos (RFC 1918)
-_INTERNAL_IP_PATTERN = re.compile(r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b")
+_INTERNAL_IP_PATTERN = re.compile(
+    r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b"
+)
 
 # Dados financeiros confidenciais
 _INTERNAL_CARD_PATTERN = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
@@ -26,10 +32,10 @@ _INTERNAL_PASSWORD_PATTERN = re.compile(r"(?i)\bsenha[:\s]+[^\s]{4,30}\b")
 def inspect_and_filter_dlp(text: str) -> Tuple[str, Dict[str, Any]]:
     """
     Inspeciona e filtra dados confidenciais de saída (DLP).
-    
+
     Args:
         text: Texto da resposta sugerida ou mensagem de saída.
-        
+
     Returns:
         Tuple contendo:
         1. Texto filtrado seguro.
@@ -85,4 +91,3 @@ def check_dlp_violations(text: str) -> List[Dict[str, str]]:
     """Retorna lista de violações identificadas sem modificar o texto original."""
     _, meta = inspect_and_filter_dlp(text)
     return [{"rule": v} for v in meta.get("violations", [])]
-

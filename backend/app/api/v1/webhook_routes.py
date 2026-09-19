@@ -2,13 +2,15 @@
 Rotas para Gerenciamento de Webhooks de Saída (Outbound Webhooks) (#26).
 """
 import logging
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+
 from backend.app import db
-from backend.app.models.webhook import WebhookSubscription, WebhookDelivery
-from backend.app.utils.tenant_context import get_current_tenant_id
-from backend.app.services.webhook_service import WebhookService
+from backend.app.models.webhook import WebhookDelivery, WebhookSubscription
 from backend.app.services.audit_service import AuditService
+from backend.app.services.webhook_service import WebhookService
+from backend.app.utils.tenant_context import get_current_tenant_id
 
 logger = logging.getLogger(__name__)
 
@@ -23,23 +25,26 @@ def list_webhooks():
     if tenant_id is None:
         return jsonify({"error": "No tenant associated"}), 400
 
-    subscriptions = WebhookSubscription.query.filter_by(
-        tenant_id=tenant_id, is_deleted=False
-    ).all()
+    subscriptions = WebhookSubscription.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
 
-    return jsonify({
-        "webhooks": [
+    return (
+        jsonify(
             {
-                "id": s.id,
-                "url": s.url,
-                "events": s.events,
-                "is_active": s.is_active,
-                "description": s.description,
-                "created_at": s.created_at.isoformat(),
+                "webhooks": [
+                    {
+                        "id": s.id,
+                        "url": s.url,
+                        "events": s.events,
+                        "is_active": s.is_active,
+                        "description": s.description,
+                        "created_at": s.created_at.isoformat(),
+                    }
+                    for s in subscriptions
+                ]
             }
-            for s in subscriptions
-        ]
-    }), 200
+        ),
+        200,
+    )
 
 
 @webhook_bp.route("", methods=["POST"])
@@ -76,15 +81,20 @@ def create_webhook():
         tenant_id=tenant_id,
     )
 
-    return jsonify({
-        "message": "Webhook created successfully",
-        "webhook": {
-            "id": subscription.id,
-            "url": subscription.url,
-            "secret": subscription.secret,  # Exibido apenas na criação para segurança
-            "events": subscription.events,
-        }
-    }), 201
+    return (
+        jsonify(
+            {
+                "message": "Webhook created successfully",
+                "webhook": {
+                    "id": subscription.id,
+                    "url": subscription.url,
+                    "secret": subscription.secret,  # Exibido apenas na criação para segurança
+                    "events": subscription.events,
+                },
+            }
+        ),
+        201,
+    )
 
 
 @webhook_bp.route("/<int:webhook_id>", methods=["DELETE"])
@@ -134,12 +144,17 @@ def test_webhook(webhook_id):
         payload=test_payload,
     )
 
-    return jsonify({
-        "message": "Test webhook dispatched",
-        "status_code": delivery.status_code,
-        "success": delivery.success,
-        "response_body": delivery.response_body,
-    }), 200
+    return (
+        jsonify(
+            {
+                "message": "Test webhook dispatched",
+                "status_code": delivery.status_code,
+                "success": delivery.success,
+                "response_body": delivery.response_body,
+            }
+        ),
+        200,
+    )
 
 
 @webhook_bp.route("/<int:webhook_id>/deliveries", methods=["GET"])
@@ -154,15 +169,20 @@ def list_deliveries(webhook_id):
         .all()
     )
 
-    return jsonify({
-        "deliveries": [
+    return (
+        jsonify(
             {
-                "id": d.id,
-                "event": d.event,
-                "status_code": d.status_code,
-                "success": d.success,
-                "created_at": d.created_at.isoformat(),
+                "deliveries": [
+                    {
+                        "id": d.id,
+                        "event": d.event,
+                        "status_code": d.status_code,
+                        "success": d.success,
+                        "created_at": d.created_at.isoformat(),
+                    }
+                    for d in deliveries
+                ]
             }
-            for d in deliveries
-        ]
-    }), 200
+        ),
+        200,
+    )

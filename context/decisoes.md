@@ -64,6 +64,11 @@ criado: 2026-09-12
   **Fecha:** Orquestração operacional de triagem em time e motor de regras automáticas.
   **Descartado:** Fluxo estático sem atribuição e sem suporte a notas internas entre operadores.
 
+- [2026-09-19] (i) **Adequação do pipeline de CI e conformidade estrita de tipagem (Flake8, Black, isort, MyPy, Trivy SARIF).**
+  **Por quê:** Garantir integridade de build no GitHub Actions, corrigindo permissões do token (`security-events: write`), parâmetros do scanner Trivy, isolamento de cache do pytest e resolução de tipagem PEP 484 no backend.
+  **Fecha:** Falhas no workflow de CI para push/PR.
+  **Descartado:** Desativar steps de segurança ou ignorar verificação de tipos.
+
 
 
 

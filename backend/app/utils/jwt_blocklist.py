@@ -4,8 +4,9 @@ Permite revogação instantânea de tokens de acesso (logout, detecção de anom
 """
 import logging
 from typing import Optional
-from flask import current_app
+
 import redis
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def _get_redis() -> Optional[redis.Redis]:
 def add_token_to_blocklist(jti: str, expires_in_seconds: int = 86400) -> None:
     """
     Adiciona o JTI (JWT Unique Identifier) na blocklist de revogação.
-    
+
     Args:
         jti: Identificador único do token JWT.
         expires_in_seconds: Tempo de expiração no Redis (TTL) para autolimpeza.

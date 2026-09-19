@@ -3,9 +3,11 @@ Controle de Acesso Baseado em Papéis (RBAC - Role-Based Access Control).
 Papéis suportados: admin, operator, viewer, auditor.
 """
 from functools import wraps
-from typing import List, Tuple, Optional
-from flask import jsonify, g
-from flask_jwt_extended import verify_jwt_in_request, get_jwt, get_jwt_identity
+from typing import Optional
+
+from flask import g, jsonify
+from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
+
 from backend.app.models.user import User
 
 # Hierarquia e definições de papéis
@@ -53,7 +55,7 @@ def get_current_user_role() -> str:
 def roles_required(*allowed_roles: str):
     """
     Decorator que restringe o endpoint apenas para usuários com as roles informadas.
-    
+
     Exemplo:
         @api_v1_bp.route("/admin/settings", methods=["POST"])
         @jwt_required()
@@ -61,19 +63,27 @@ def roles_required(*allowed_roles: str):
         def update_settings():
             ...
     """
+
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             # Garante que o JWT é verificado
             verify_jwt_in_request()
-            
+
             user_role = get_current_user_role()
             if user_role not in allowed_roles:
-                return jsonify({
-                    "error": "insufficient_permissions",
-                    "message": f"User role '{user_role}' is not authorized to access this resource. Required: {list(allowed_roles)}"
-                }), 403
+                return (
+                    jsonify(
+                        {
+                            "error": "insufficient_permissions",
+                            "message": f"User role '{user_role}' is not authorized to access this resource. Required: {list(allowed_roles)}",
+                        }
+                    ),
+                    403,
+                )
 
             return fn(*args, **kwargs)
+
         return wrapper
+
     return decorator

@@ -1,46 +1,66 @@
 """
 Testes de integração para as funcionalidades da Fase 3 (LGPD, Retenção, DLP e ROI Stats).
 """
+import uuid
+
 import pytest
-from backend.app import db
-from backend.app.models.tenant import Tenant
-from backend.app.models.user import User
-from backend.app.models.email_analysis import EmailAnalysis
-from backend.app.models.feedback import AnalysisFeedback
 from flask_jwt_extended import create_access_token
 
-
-import uuid
+from backend.app import db
+from backend.app.models.email_analysis import EmailAnalysis
+from backend.app.models.feedback import AnalysisFeedback
+from backend.app.models.tenant import Tenant
+from backend.app.models.user import User
 
 
 @pytest.fixture
 def phase3_setup(app):
     with app.app_context():
         uid = uuid.uuid4().hex[:8]
-        tenant = Tenant(name=f"Phase 3 Corp {uid}", slug=f"p3-corp-{uid}", plan="enterprise", settings={"retention_days": 60})
+        tenant = Tenant(
+            name=f"Phase 3 Corp {uid}",
+            slug=f"p3-corp-{uid}",
+            plan="enterprise",
+            settings={"retention_days": 60},
+        )
         db.session.add(tenant)
         db.session.commit()
 
-        admin_user = User(username=f"admin_{uid}", email=f"admin_{uid}@test.com", role="admin", tenant_id=tenant.id)
+        admin_user = User(
+            username=f"admin_{uid}",
+            email=f"admin_{uid}@test.com",
+            role="admin",
+            tenant_id=tenant.id,
+        )
         admin_user.set_password("pass123")
-        operator_user = User(username=f"op_{uid}", email=f"op_{uid}@test.com", role="operator", tenant_id=tenant.id)
+        operator_user = User(
+            username=f"op_{uid}", email=f"op_{uid}@test.com", role="operator", tenant_id=tenant.id
+        )
         operator_user.set_password("pass123")
         db.session.add_all([admin_user, operator_user])
         db.session.commit()
 
         admin_token = create_access_token(
             identity=admin_user.username,
-            additional_claims={"user_id": admin_user.id, "tenant_id": tenant.id, "role": admin_user.role}
+            additional_claims={
+                "user_id": admin_user.id,
+                "tenant_id": tenant.id,
+                "role": admin_user.role,
+            },
         )
         op_token = create_access_token(
             identity=operator_user.username,
-            additional_claims={"user_id": operator_user.id, "tenant_id": tenant.id, "role": operator_user.role}
+            additional_claims={
+                "user_id": operator_user.id,
+                "tenant_id": tenant.id,
+                "role": operator_user.role,
+            },
         )
 
         return {
             "tenant": tenant,
             "admin_headers": {"Authorization": f"Bearer {admin_token}"},
-            "op_headers": {"Authorization": f"Bearer {op_token}"}
+            "op_headers": {"Authorization": f"Bearer {op_token}"},
         }
 
 
@@ -57,7 +77,7 @@ def test_compliance_export_endpoint(client, phase3_setup):
         suggested_response="Prezada Maria, cancelamento efetuado.",
         sentiment="Neutro",
         urgency="Media",
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     db.session.add(analysis)
     db.session.commit()
@@ -65,7 +85,7 @@ def test_compliance_export_endpoint(client, phase3_setup):
     response = client.post(
         "/api/v1/compliance/export",
         json={"identifier": "maria.oliveira@banco.com"},
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 200
     data = response.get_json()
@@ -83,7 +103,7 @@ def test_compliance_erasure_endpoint(client, phase3_setup):
         content_hash="hash_p3_erasure",
         category="Produtivo",
         suggested_response="Resposta enviada a roberto.souza@fintech.com",
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     db.session.add(analysis)
     db.session.commit()
@@ -91,7 +111,7 @@ def test_compliance_erasure_endpoint(client, phase3_setup):
     response = client.post(
         "/api/v1/compliance/erasure",
         json={"identifier": "roberto.souza@fintech.com"},
-        headers=headers
+        headers=headers,
     )
     assert response.status_code == 200
     data = response.get_json()
@@ -107,9 +127,7 @@ def test_compliance_rbac_forbidden_for_operator(client, phase3_setup):
 
     # Operador comum não tem permissão para expurgar dados
     response = client.post(
-        "/api/v1/compliance/erasure",
-        json={"identifier": "teste@exemplo.com"},
-        headers=headers
+        "/api/v1/compliance/erasure", json={"identifier": "teste@exemplo.com"}, headers=headers
     )
     assert response.status_code == 403
 
@@ -128,7 +146,7 @@ def test_stats_with_roi_and_breakdowns(client, phase3_setup):
         urgency="Alta",
         in_quarantine=False,
         processing_time_ms=450,
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     analysis2 = EmailAnalysis(
         email_content="Parabéns pelo excelente atendimento",
@@ -140,7 +158,7 @@ def test_stats_with_roi_and_breakdowns(client, phase3_setup):
         urgency="Baixa",
         in_quarantine=False,
         processing_time_ms=320,
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     analysis3 = EmailAnalysis(
         email_content="Email com baixa confiança e suspeita de fraude",
@@ -152,14 +170,16 @@ def test_stats_with_roi_and_breakdowns(client, phase3_setup):
         urgency="Critica",
         in_quarantine=True,
         processing_time_ms=500,
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
     )
     db.session.add_all([analysis1, analysis2, analysis3])
     db.session.commit()
 
     # Feedback
     fb1 = AnalysisFeedback(analysis_id=analysis1.id, approved=True, tenant_id=tenant_id)
-    fb2 = AnalysisFeedback(analysis_id=analysis2.id, approved=False, notes="Corrigido", tenant_id=tenant_id)
+    fb2 = AnalysisFeedback(
+        analysis_id=analysis2.id, approved=False, notes="Corrigido", tenant_id=tenant_id
+    )
     db.session.add_all([fb1, fb2])
     db.session.commit()
 

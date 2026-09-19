@@ -6,11 +6,7 @@ Testes de integração para as funcionalidades da Fase 0:
 - Mascaramento de PII
 - JWT Logout & Blocklist
 """
-import json
-from backend.app.models.tenant import Tenant
 from backend.app.models.audit_log import AuditLog
-from backend.app.models.email_analysis import EmailAnalysis
-from backend.app.models.user import User
 
 
 def test_multi_tenant_registration(client):
