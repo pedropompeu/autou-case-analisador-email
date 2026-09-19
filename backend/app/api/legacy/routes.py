@@ -6,7 +6,7 @@ Flask. Novos clientes devem usar a API versionada em /api/v1/.
 """
 import logging
 
-from flask import jsonify, render_template, request
+from flask import jsonify, redirect, render_template, request, url_for
 
 from backend.app.api.legacy import legacy_bp
 from backend.app.repositories.email_analysis_repository import EmailAnalysisRepository
@@ -26,6 +26,12 @@ logger = logging.getLogger(__name__)
 def index():
     """Renderiza a página principal / SPA React."""
     return render_template("index.html")
+
+
+@legacy_bp.route("/docs")
+def docs_redirect():
+    """Redireciona /docs para a documentação Swagger /api/v1/docs."""
+    return redirect("/api/v1/docs")
 
 
 @legacy_bp.route("/processar-email", methods=["POST"])
