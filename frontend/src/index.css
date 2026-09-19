@@ -1,0 +1,107 @@
+/* index.css — Reset e tema global */
+:root {
+  --color-bg: #0d0f14;
+  --color-surface: #161b22;
+  --color-border: #30363d;
+  --color-primary: #58a6ff;
+  --color-primary-hover: #79c0ff;
+  --color-success: #3fb950;
+  --color-danger: #f85149;
+  --color-warning: #e3b341;
+  --color-text: #e6edf3;
+  --color-muted: #8b949e;
+  --radius: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { color: var(--color-primary-hover); }
+
+input, textarea, select {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus { border-color: var(--color-primary); }
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.65rem 1.4rem;
+  transition: opacity 0.15s, background 0.15s;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #0d0f14;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--color-surface); }
+
+.btn-success { background: var(--color-success); color: #0d0f14; }
+.btn-danger { background: var(--color-danger); color: #fff; }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-productive { background: rgba(63,185,80,0.15); color: var(--color-success); }
+.badge-unproductive { background: rgba(248,81,73,0.15); color: var(--color-danger); }
+
+.spinner {
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 0.7s linear infinite;
+  margin: 2rem auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-msg {
+  background: rgba(248,81,73,0.12);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  color: var(--color-danger);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}

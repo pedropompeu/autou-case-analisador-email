@@ -1,4 +1,4 @@
-# docker-compose.yml — Ambiente de desenvolvimento local
+# docker-compose.yml — Ambiente de desenvolvimento local (monorepo)
 
 services:
   # PostgreSQL Database
@@ -38,7 +38,7 @@ services:
     networks:
       - app_network
 
-  # Backend Flask Application
+  # Backend Flask API (headless — apenas /api/v1/*)
   backend:
     build:
       context: .
@@ -52,7 +52,6 @@ services:
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
     volumes:
       - ./:/app
-      - ./logs:/app/logs
     ports:
       - "5000:5000"
     depends_on:
@@ -79,7 +78,6 @@ services:
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
     volumes:
       - ./:/app
-      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,19 +87,19 @@ services:
       - app_network
     restart: unless-stopped
 
-  # Frontend Vue.js (opcional para desenvolvimento)
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.frontend
-  #   container_name: email_analyzer_frontend
-  #   ports:
-  #     - "80:80"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - app_network
-  #   restart: unless-stopped
+  # Frontend React (Vite dev server / Nginx em produção)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: email_analyzer_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:

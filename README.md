@@ -5,6 +5,7 @@
 <p>
 <img src="https://img.shields.io/badge/Python-3.11%2B-blue.svg" alt="Python 3.11+">
 <img src="https://img.shields.io/badge/Flask-3.0-black.svg" alt="Flask 3.0">
+<img src="https://img.shields.io/badge/React-19-61DAFB.svg" alt="React 19">
 <img src="https://img.shields.io/badge/Gemini-2.0--flash-orange.svg" alt="Gemini">
 </p>
 </div>
@@ -23,48 +24,26 @@ Solução para o desafio da AutoU: otimizar a gestão de emails numa empresa do 
 - 🤖 **Classificação por IA** — Google Gemini analisa conteúdo textual
 - 💬 **Sugestão de respostas** — respostas automáticas contextuais
 - 📎 **Upload de ficheiros** — suporte para `.txt` e `.pdf`
+- 📊 **Dashboard de métricas** — análises totais, taxa de produtividade, tempo economizado
+- 👤 **Feedback humano** — aprove ou corrija a classificação da IA (human-in-the-loop)
 - 🌗 **Tema claro/escuro** — alternância com um clique
-- 📋 **Copiar resposta** — botão de cópia rápida
 - 🔄 **Retry com backoff** — resiliência contra limites de taxa da API
+- ⚡ **Processamento assíncrono** — análises em background via Celery
 
 ## 🛠️ Stack
 
 | Camada | Tecnologias |
 |---|---|
+| **Frontend** | React 19, Vite, React Router, Axios |
 | **Backend** | Python 3.11+, Flask 3.0, Gunicorn |
 | **IA** | Google Gemini API (`google-genai` SDK) |
-| **Frontend** | HTML5, CSS3, JavaScript, Bootstrap 5 |
 | **Banco de dados** | PostgreSQL 15, SQLAlchemy, Flask-Migrate |
 | **Cache / Filas** | Redis 7, Celery |
 | **Segurança** | Flask-JWT-Extended, Flask-Talisman, Flask-Limiter, Flask-CORS |
 | **Observabilidade** | Sentry, Prometheus |
-| **Infraestrutura** | Docker, Docker Compose, Nginx |
+| **Infraestrutura** | Docker Compose, Nginx |
 
 ## ⚙️ Como Executar
-
-### Desenvolvimento local (sem Docker)
-
-```bash
-# 1. Clone o repositório
-git clone https://github.com/pedropompeu/autou-case-analisador-email.git
-cd autou-case-analisador-email
-
-# 2. Crie e ative um ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# .\venv\Scripts\activate  # Windows
-
-# 3. Instale as dependências
-pip install -r requirements.txt
-
-# 4. Configure as variáveis de ambiente
-cp .env.example .env
-# Edite .env e adicione sua GEMINI_API_KEY
-
-# 5. Inicie o servidor
-python wsgi.py
-# Acesse http://localhost:5000
-```
 
 ### Com Docker (recomendado)
 
@@ -73,77 +52,123 @@ python wsgi.py
 cp .env.example .env
 # Edite .env e adicione sua GEMINI_API_KEY e SECRET_KEY
 
-# 2. Build + inicie tudo (backend + PostgreSQL + Redis + Celery)
+# 2. Build + inicie tudo (backend + frontend + PostgreSQL + Redis + Celery)
 make init
-# Acesse http://localhost:5000
+
+# Backend API: http://localhost:5000/api/v1/
+# Frontend:    http://localhost:3000
+```
+
+### Desenvolvimento local (sem Docker)
+
+```bash
+# Backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python wsgi.py  # http://localhost:5000
+
+# Frontend (em outro terminal)
+cd frontend
+npm install
+npm run dev  # http://localhost:5173
 ```
 
 ### Comandos úteis (Makefile)
 
 ```bash
-make help          # Lista todos os comandos
-make test          # Executa testes
-make test-cov      # Testes com cobertura
-make lint          # Linting (flake8 + mypy)
-make format        # Formata código (black + isort)
-make clean         # Remove artefatos de build
-make docker-up     # Inicia containers
-make docker-down   # Para containers
-make docker-logs   # Logs dos containers
-make migrate       # Executa migrações do banco
+make help              # Lista todos os comandos
+make test              # Executa testes (backend)
+make test-cov          # Testes com cobertura
+make lint              # Linting (flake8 + mypy)
+make format            # Formata código (black + isort)
+make frontend-install  # Instala deps do frontend
+make frontend-dev      # Dev server do frontend
+make frontend-build    # Build de produção do frontend
+make docker-up         # Inicia containers
+make docker-down       # Para containers
+make docker-logs       # Logs dos containers
+make migrate           # Executa migrações do banco
 ```
 
 ## 🏗️ Estrutura do Projeto
 
 ```
 autou-case/
-├── backend/                     # Código-fonte principal
+├── frontend/                    # React SPA (Vite)
+│   ├── Dockerfile               # Multi-stage: Node → Nginx
+│   ├── nginx.conf               # Proxy reverso para API
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── api/client.js        # Axios com interceptors JWT
+│       ├── pages/
+│       │   ├── EmailAnalyzer.jsx
+│       │   ├── Dashboard.jsx
+│       │   └── Login.jsx
+│       ├── components/Navbar.jsx
+│       └── styles/App.css
+├── backend/                     # Flask API (headless)
 │   ├── config.py                # Configuração multi-ambiente
 │   ├── app/
-│   │   ├── __init__.py          # App factory (Flask)
-│   │   ├── api/
-│   │   │   ├── legacy/          # Rotas do frontend HTML (/, /processar-email)
-│   │   │   └── v1/              # API REST versionada (/api/v1/*)
-│   │   ├── middleware/          # Request logger
+│   │   ├── __init__.py          # App factory
+│   │   ├── api/v1/              # API REST versionada
+│   │   │   ├── email_routes.py  # Análise de email
+│   │   │   ├── stats_routes.py  # Métricas do dashboard
+│   │   │   ├── feedback_routes.py # Human-in-the-loop
+│   │   │   ├── auth_routes.py   # Autenticação JWT
+│   │   │   └── health_routes.py # Health check
 │   │   ├── models/              # SQLAlchemy models
-│   │   ├── repositories/       # Repository pattern (acesso a dados)
+│   │   ├── repositories/       # Repository pattern
 │   │   ├── services/           # Lógica de negócio + LLM providers
 │   │   └── utils/              # File processor, cache
 │   ├── migrations/              # Alembic migrations
 │   └── tests/                   # Testes (unit + integration)
-├── templates/index.html         # Frontend (Jinja2 + Bootstrap 5)
-├── static/                      # CSS + JS do frontend
-├── wsgi.py                      # Entry point WSGI (Gunicorn)
-├── celery_worker.py             # Entry point Celery
-├── docker-compose.yml           # Orquestração (dev)
+├── docker-compose.yml           # Orquestração (5 serviços)
 ├── Dockerfile.backend           # Imagem Docker do backend
 ├── Makefile                     # Comandos utilitários
-├── requirements.txt             # Dependências de produção
 ├── context/                     # Memória de projeto (para IAs)
 └── fontes/                      # Fontes brutas auditáveis
 ```
 
 ## 🔌 API Endpoints
 
-### Frontend (legacy)
+### Autenticação
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/` | Página principal |
-| `POST` | `/processar-email` | Analisa email (form-data) |
+| `POST` | `/api/v1/auth/register` | Registrar novo usuário |
+| `POST` | `/api/v1/auth/login` | Login (retorna JWT) |
+| `GET` | `/api/v1/auth/me` | Dados do usuário autenticado |
 
-### API v1 (autenticada via JWT)
+### Análise de Emails (JWT obrigatório)
 
 | Método | Rota | Descrição |
 |---|---|---|
 | `POST` | `/api/v1/analyze` | Analisa email (JSON) |
 | `POST` | `/api/v1/analyze-with-file` | Analisa email com ficheiro |
 | `GET` | `/api/v1/tasks/<id>` | Status de tarefa assíncrona |
-| `GET` | `/health` | Health check |
+
+### Dashboard e Feedback (JWT obrigatório)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/stats` | Métricas agregadas |
+| `POST` | `/api/v1/feedback` | Feedback sobre classificação |
+
+### Infraestrutura
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/health` | Health check detalhado |
+| `GET` | `/health` | Health check (load balancer) |
 
 ## 🤔 Decisões Técnicas
 
-- **Gemini vs. NLP Tradicional:** LLMs modernos entendem contexto e semântica sem pré-processamento manual (stop words, stemming).
-- **Retry com Exponential Backoff + Jitter:** Distribui retentativas no tempo, evitando "thundering herd" quando múltiplos requests atingem rate limit.
-- **Arquitetura enterprise (backend/):** Repository Pattern, Service Layer, Abstract LLM Provider — permite trocar de modelo facilmente e testar com mocks.
-- **Cache por hash SHA-256:** Emails idênticos são servidos do banco sem chamar a API novamente.
+- **Gemini vs. NLP Tradicional:** LLMs modernos entendem contexto e semântica sem pré-processamento manual.
+- **Monorepo (frontend + backend):** Simplifica CI/CD e compartilha configs (Docker Compose, .env).
+- **Backend headless:** API pura `/api/v1/*` — frontend React desacoplado consome via Axios.
+- **Human-in-the-loop:** Feedback do usuário armazenado para métricas e eventual fine-tuning.
+- **LLM Provider abstrato:** Interface que permite trocar Gemini por OpenAI/Claude sem alterar lógica de negócio.
+- **Cache por hash SHA-256:** Emails idênticos servidos do banco sem chamar a API novamente.

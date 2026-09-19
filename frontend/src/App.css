@@ -1,0 +1,150 @@
+/* App.css — Layout do shell da aplicação */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.navbar {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-brand span { color: var(--color-primary); }
+
+.navbar-nav {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  transition: color 0.15s, background 0.15s;
+}
+.nav-link:hover, .nav-link.active {
+  color: var(--color-text);
+  background: rgba(88,166,255,0.1);
+}
+
+.main-content {
+  flex: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  width: 100%;
+}
+
+/* Auth pages */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-card h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.auth-card p { color: var(--color-muted); margin-bottom: 1.5rem; }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* Dashboard stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin-top: 0.4rem;
+}
+
+/* Analyzer form */
+.analyzer-textarea {
+  font-family: monospace;
+  min-height: 180px;
+  resize: vertical;
+}
+
+.result-card {
+  margin-top: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+.result-section { margin-top: 1.25rem; }
+.result-section h4 { color: var(--color-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.result-section p { line-height: 1.7; }
+
+.feedback-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+.page-header h1 { font-size: 1.5rem; }
+.page-header p { color: var(--color-muted); font-size: 0.9rem; margin-top: 0.25rem; }
