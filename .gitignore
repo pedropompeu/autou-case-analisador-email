@@ -1,13 +1,92 @@
-# Ambientes Virtuais
-venv/
-*.venv
-env/
-.env
-
-# Cache do Python
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Arquivos de IDE
+# Pip install junk (e.g. =0.8.0 from malformed pip commands)
+=*
+
+# Flask
+instance/
+.webassets-cache
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Migrations versions (descomentar se não quiser versionar)
+# backend/migrations/versions/
+
+# Coverage
+.coverage.*
+coverage.xml
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter
+.ipynb_checkpoints
+
+# Documentation
+docs/_build/
+site/
+
+# Backups
+*.backup
+*.bak
+backups/
+
+# SSL Certificates (se usar)
+ssl/
+*.pem
+*.key
+*.crt

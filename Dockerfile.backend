@@ -1,0 +1,49 @@
+# Multi-stage build para otimização de imagem
+FROM python:3.11-slim as builder
+
+WORKDIR /build
+
+# Instalar dependências de sistema necessárias
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements e instalar dependências Python
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Stage final - imagem mínima
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Criar usuário não-root para segurança
+RUN useradd -m -u 1000 appuser
+
+# Copiar dependências instaladas do builder
+COPY --from=builder /root/.local /home/appuser/.local
+
+# Garantir que scripts em .local estão no PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Copiar código da aplicação
+COPY backend/ ./backend/
+COPY templates/ ./templates/
+COPY static/ ./static/
+COPY wsgi.py ./wsgi.py
+
+# Ajustar permissões
+RUN chown -R appuser:appuser /app /home/appuser/.local
+
+USER appuser
+
+# Expor porta
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5000/health', timeout=2)"
+
+# Comando para produção com Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "wsgi:app"]
